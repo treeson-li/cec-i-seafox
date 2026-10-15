@@ -40,3 +40,11 @@ SEAFOX_FUEL_TAP = space:install_read_tap(0x7E1B, 0x7E1B, "seafox_fuel", function
   if space:read_u8(0x7E1C) == 0 and cost > fuel then cost = fuel end
   return (cost // 10) * 16 + cost % 10
 end)
+
+-- 无限命：$71C3 是剩余命数，每局开始设为 3（$69DA），每死一次 $6C2E 处 DEC 一次，
+-- $6D5F 读到 0 就结束游戏。写 tap 把小于 3 的写入改回 3。SEAFOX_INFINITE_LIVES=0 恢复原版。
+if os.getenv("SEAFOX_INFINITE_LIVES") ~= "0" then
+  SEAFOX_LIVES_TAP = space:install_write_tap(0x71C3, 0x71C3, "seafox_lives", function(offset, data, mask)
+    if data < 3 then return 3 end
+  end)
+end

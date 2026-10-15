@@ -6,8 +6,8 @@
 
 | 版本 | 启动 | 内容 |
 |---|---|---|
-| 修改版（默认） | `./play_seafox.sh` | 方向键 8 方向操作、新增向左发射、向前发射不限颗数、停船时油耗减半 |
-| 原版 | `./play_seafox.sh --original` | 原按键、原开火限制、原油耗，和当年一样 |
+| 修改版（默认） | `./play_seafox.sh` | 方向键 8 方向操作、新增向左发射、向前发射不限颗数、停船时油耗减半、无限命 |
+| 原版 | `./play_seafox.sh --original` | 原按键、原开火限制、原油耗、3 条命，和当年一样 |
 
 两个版本运行的是同一份磁带，修改版通过 MAME 的 Lua 脚本在运行时改变游戏读到的值，不修改游戏代码。
 
@@ -114,6 +114,7 @@ votrsc01a.zip
 | 向前（向右）发射 | 同屏 1 颗 | 不限（对象表快满时暂停开火，防止内存越界） | `SEAFOX_MAX_FWD=1` 恢复原版 |
 | 向上发射 | 同屏 1 颗 | 同屏 1 颗 | `SEAFOX_MAX_UP=2` 放宽，**每多 1 颗游戏速度减半** |
 | 油耗 | 不管动不动都一样 | 停船时减半 | `SEAFOX_IDLE_FUEL=10` 恢复原版，数值越小越省油 |
+| 命数 | 3 条 | 无限（始终显示 3 条） | `SEAFOX_INFINITE_LIVES=0` 恢复原版 |
 
 调整方法是在启动命令前加环境变量，例如 `SEAFOX_MAX_UP=2 ./play_seafox.sh`。
 
@@ -126,7 +127,7 @@ play_seafox.sh             启动脚本（--original 原版，B 用 B 面）
 setup.sh                   检查 MAME、下载磁带和说明书、检查 ROM
 tools/play_seafox.lua      自动装载：输入读带命令、放带、装完后恢复正常速度
 tools/seafox_controls.lua  修改版：方向键控制层
-tools/seafox_patches.lua   修改版：开火限制、油耗
+tools/seafox_patches.lua   修改版：开火限制、油耗、无限命
 tools/seafox_leftfire.lua  修改版：向左发射
 tools/research/            磁带解码和程序分析用的脚本（玩游戏不需要）
 docs/TECHNICAL.md          磁带格式、装载过程、游戏内部变量
