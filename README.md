@@ -70,6 +70,8 @@ votrsc01a.zip
   sc01a.bin                     SHA1 1d6da90b1807a01b5e186ef08476119a862b5e6d
 ```
 
+本项目测试时用的 ROM 下载自 [planetemu.net 的 MAME merged 集合](https://www.planetemu.net/en/rom/mame-roms-merged/ceci)，4 个压缩包都通过了 MAME 0.289 的校验。该站点与本项目无关，ROM 的版权和使用责任由使用者自行承担。
+
 最正当的来源是从实机转储：`u7`、`u35` 是 27256 EPROM，普通编程器就能读；`u33`、`u34` 是 128KB 掩膜 ROM，需要转接座。
 
 ## 操作
