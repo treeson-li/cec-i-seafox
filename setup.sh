@@ -24,7 +24,7 @@ fetch() { # 本地路径 远程文件名 SHA1
 }
 fetch "tapes/Face A.wav" "Face%20A.wav" ab151d913bc4b8d34d01509bd8653c1c963528d2
 fetch "tapes/Face B.wav" "Face%20B.wav" 2e7ee3623c6a8aeae21c3429ee88e6b9280c488e
-fetch "manual.jpg" "manual.jpg" 14125878c97f05750c80ca2cb013e3533eb8e9de
+fetch "manual.jpg" "scans/jpegs/manual.jpg" 14125878c97f05750c80ca2cb013e3533eb8e9de
 
 echo "== ROM（需自备，见 README）"
 mkdir -p roms
