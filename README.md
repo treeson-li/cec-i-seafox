@@ -21,10 +21,13 @@ cd cec-i-seafox
 # 2. 安装 MAME、下载磁带和说明书、检查 ROM：
 ./setup.sh
 # 3. 开始游戏
-./play_seafox.sh              # 修改版，A 面磁带
-./play_seafox.sh B            # 修改版，B 面磁带（两面内容相同，A 面坏了可以用 B 面）
+./play_seafox.sh              # 修改版，从第 1 关开始
+./play_seafox.sh 4            # 修改版，从第 4 关开始（关卡 1-5）
 ./play_seafox.sh --original   # 原版
+./play_seafox.sh --original 5 # 原版，从第 5 关开始
 ```
+
+装载用的是 A 面磁带。B 面内容相同，是备份，要改用 B 面可以编辑 `play_seafox.sh` 里的 `TAPE`。
 
 装载阶段自动关闭限速，十几秒就能看到标题画面（中华学习机游戏软件 / 海战 SEAFOX / 陕西省计算机厂制作 NO.88-018），之后恢复正常速度进入演示画面，**按空格开始游戏**。
 
@@ -123,7 +126,7 @@ votrsc01a.zip
 ## 文件
 
 ```
-play_seafox.sh             启动脚本（--original 原版，B 用 B 面）
+play_seafox.sh             启动脚本（--original 原版，数字 1-5 指定起始关卡）
 setup.sh                   检查 MAME、下载磁带和说明书、检查 ROM
 tools/play_seafox.lua      自动装载：输入读带命令、放带、装完后恢复正常速度
 tools/seafox_controls.lua  修改版：方向键控制层

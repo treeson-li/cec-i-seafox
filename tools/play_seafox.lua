@@ -9,6 +9,15 @@ if not original then
 end
 local m = manager.machine
 local cpu = m.devices[":maincpu"]
+
+-- 起始关卡：开局时 $69F6 的 INC $71C1 把关卡号从 0 写成 1，这里改成指定关卡，之后照常逐关递增。
+-- 游戏结束后 $71C1 清 0，再开局又会从指定关卡开始。原版和修改版都适用。
+local start_mission = tonumber(os.getenv("SEAFOX_START_MISSION")) or 1
+if start_mission > 1 and start_mission <= 5 then
+  SEAFOX_MISSION_TAP = cpu.spaces["program"]:install_write_tap(0x71C1, 0x71C1, "seafox_mission", function(o, d, mk)
+    if d == 1 then return start_mission end
+  end)
+end
 local cass = m.cassettes[":tape"]
 local enter_at = tonumber(os.getenv("ENTER_AT")) or 6.5
 local step, t0 = 0, 0
