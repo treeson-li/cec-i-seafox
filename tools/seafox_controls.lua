@@ -6,7 +6,8 @@
 -- 这里每帧读电脑上的按键，方向键合成 8 方向，状态稳定后把对应的游戏键
 -- 注入 $C000 的读取结果，松开全部方向键时注入停船键；开火键同样注入。
 -- 方向键在模拟键盘上产生的 $88/$95/$8B/$8A（$88 = Ctrl-H 会反转水平方向）一律屏蔽；
--- 游戏进行中再屏蔽模拟键盘上的 D/F/空格，它们改由这里处理（D 改为向左发射，见 seafox_leftfire.lua）。
+-- 游戏进行中再屏蔽模拟键盘上的 D/F/空格/回车，它们改由这里处理（D 改为向左发射，见 seafox_leftfire.lua；
+-- 回车改为暂停/继续）。
 
 local m = manager.machine
 local cpu = m.devices[":maincpu"]
@@ -24,11 +25,14 @@ local KEY = {
   fire_up = codes("KEYCODE_SPACE", "KEYCODE_X"),
   fire_fwd = codes("KEYCODE_F", "KEYCODE_Z"),
   fire_left = codes("KEYCODE_D"),
+  pause = codes("KEYCODE_ENTER", "KEYCODE_ENTER_PAD"),
 }
 -- 开火动作 -> 键表里的标记（向左发射借用向前发射的键，由 seafox_leftfire.lua 改方向）
 local FIRE = { fire_up = 0x81, fire_fwd = 0x80, fire_left = 0x80 }
 local MASKED = { [0x88] = true, [0x95] = true, [0x8B] = true, [0x8A] = true }
-local MASKED_IN_PLAY = { [0xA0] = true, [0xC4] = true, [0xC6] = true, [0xE4] = true, [0xE6] = true }
+local MASKED_IN_PLAY = { [0xA0] = true, [0xC4] = true, [0xC6] = true, [0xE4] = true, [0xE6] = true, [0x8D] = true }
+-- 游戏的暂停键是 Esc（$704B）：暂停后等任意键继续。回车注入 Esc，暂停中再按回车注入 Esc 即继续
+local ESC = 0x1B
 local SETTLE_FRAMES = 3   -- 方向组合需稳定这么多帧才生效，避免松开斜向时闪一下直行
 local FIRE_REPEAT = 6     -- 按住开火键时每隔多少帧连发一次
 
@@ -79,6 +83,7 @@ end
 
 local cur, cand, cand_frames = nil, nil, 0
 local fire_wait = { fire_fwd = 0, fire_up = 0, fire_left = 0 }
+local pause_was_held = false
 
 -- 游戏不读键时（如开场驶入动画）队列会积压：方向只保留最新一条，开火最多攒 2 发
 local function push(k, is_dir, is_left)
@@ -111,6 +116,10 @@ SEAFOX_CTRL_FRAME = emu.register_frame_done(function()
   end
   -- 开火只在游戏进行中注入：演示画面要让空格原样传给游戏去开局
   local playing = in_play()
+  -- 回车只在按下的那一刻触发一次
+  local pause_held = held("pause")
+  if playing and pause_held and not pause_was_held then push(ESC, false) end
+  pause_was_held = pause_held
   for name, marker in pairs(FIRE) do
     if playing and held(name) then
       if fire_wait[name] <= 0 then
@@ -126,7 +135,7 @@ end)
 
 function seafox_controls_start()
   enabled = true
-  print("Seafox controls: 方向键移动（可斜向），空格向上、F 向右、D 向左发射")
+  print("Seafox controls: 方向键移动（可斜向），空格向上、F 向右、D 向左发射，回车暂停/继续")
 end
 
 -- 测试钩子：SEAFOX_FAKE_KEYS="t0:keys;t1:keys;..."（秒:逗号分隔的动作名），用于无界面验证
