@@ -28,6 +28,20 @@ fetch "manual.jpg" "scans/jpegs/manual.jpg" 14125878c97f05750c80ca2cb013e3533eb8
 
 echo "== ROM（需自备，见 README）"
 mkdir -p roms
+# 缺 ROM 时尝试从私有备份仓库拉取；没有访问权限会静默失败，按 README 自行下载即可
+ROM_BACKUP=https://github.com/treeson-li/cec-i-seafox-roms.git
+missing=0
+for z in ceci a2diskiing d2fdc votrsc01a; do [ -f roms/$z.zip ] || missing=1; done
+if [ $missing = 1 ]; then
+  tmp=$(mktemp -d)
+  if GIT_TERMINAL_PROMPT=0 git clone -q --depth 1 "$ROM_BACKUP" "$tmp/r" 2>/dev/null; then
+    for z in "$tmp"/r/*.zip; do [ -f "roms/$(basename "$z")" ] || cp "$z" roms/; done
+    echo "已从私有备份仓库取得 ROM"
+  else
+    echo "无法访问私有备份仓库，请按 README 自行下载 ROM 放进 roms/"
+  fi
+  rm -rf "$tmp"
+fi
 if command -v mame >/dev/null 2>&1; then
   for set in ceci a2diskiing d2fdc votrsc01a; do
     mame -rompath roms -verifyroms $set 2>&1 | grep -E "romset $set " || { echo "romset $set 缺失"; ok=0; }

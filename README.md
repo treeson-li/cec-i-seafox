@@ -17,6 +17,7 @@
 git clone https://github.com/treeson-li/cec-i-seafox.git
 cd cec-i-seafox
 # 1. 按下面"ROM"一节准备好 4 个 ROM 压缩包，放进 roms/
+#    （有私有备份仓库访问权限的人可跳过这步，setup.sh 会自动拉取）
 # 2. 安装 MAME、下载磁带和说明书、检查 ROM：
 ./setup.sh
 # 3. 开始游戏
@@ -71,6 +72,8 @@ votrsc01a.zip
 ```
 
 本项目测试时用的 ROM 下载自 [planetemu.net 的 MAME merged 集合](https://www.planetemu.net/en/rom/mame-roms-merged/ceci)，4 个压缩包都通过了 MAME 0.289 的校验。该站点与本项目无关，ROM 的版权和使用责任由使用者自行承担。
+
+维护者另有一个私有备份仓库 `cec-i-seafox-roms`；被邀请为协作者的人运行 `./setup.sh` 时会自动从那里拉取 ROM，没有权限则跳过。
 
 最正当的来源是从实机转储：`u7`、`u35` 是 27256 EPROM，普通编程器就能读；`u33`、`u34` 是 128KB 掩膜 ROM，需要转接座。
 
