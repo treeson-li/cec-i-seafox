@@ -11,8 +11,10 @@ local space = m.devices[":maincpu"].spaces["program"]
 
 local SLOT_LIMIT = 24          -- 已用槽数达到这个值就暂停开火（表共 32 槽）
 -- 实测（每秒游戏节拍）：向上发射 1 颗约 45、2 颗约 22、3 颗约 12，每颗都拖着要重绘的尾迹，
--- 多一颗速度就减半，所以默认保持原版的 1 颗；向前发射很便宜，12~15 颗同屏仍约 30，默认不限。
-local MAX_UP = tonumber(os.getenv("SEAFOX_MAX_UP")) or 1
+-- 多一颗速度就减半；向前发射很便宜，12~15 颗同屏仍约 30，默认不限。
+-- 插了 TransWarp 加速卡（见 seafox_accel.lua）时同屏 3 颗也能保持每秒约 28 拍以上，所以默认 3 颗；没插卡默认 1 颗。
+local accelerated = m.devices[":sl4:twarp:tw65c02"] ~= nil
+local MAX_UP = tonumber(os.getenv("SEAFOX_MAX_UP")) or (accelerated and 3 or 1)
 local MAX_FWD = tonumber(os.getenv("SEAFOX_MAX_FWD")) or 255
 
 local function limiter(max)
