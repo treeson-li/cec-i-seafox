@@ -31,7 +31,7 @@ mkdir -p roms
 # 缺 ROM 时尝试从私有备份仓库拉取；没有访问权限会静默失败，按 README 自行下载即可
 ROM_BACKUP=https://github.com/treeson-li/cec-i-seafox-roms.git
 missing=0
-for z in ceci a2diskiing d2fdc votrsc01a; do [ -f roms/$z.zip ] || missing=1; done
+for z in ceci a2diskiing d2fdc votrsc01a a2twarp; do [ -f roms/$z.zip ] || missing=1; done
 if [ $missing = 1 ]; then
   tmp=$(mktemp -d)
   if GIT_TERMINAL_PROMPT=0 git clone -q --depth 1 "$ROM_BACKUP" "$tmp/r" 2>/dev/null; then
@@ -46,6 +46,9 @@ if command -v mame >/dev/null 2>&1; then
   for set in ceci a2diskiing d2fdc votrsc01a; do
     mame -rompath roms -verifyroms $set 2>&1 | grep -E "romset $set " || { echo "romset $set 缺失"; ok=0; }
   done
+  # TransWarp 加速卡 ROM 可选：没有时修改版照常运行，只是后期关卡会变慢
+  mame -rompath roms -verifyroms a2twarp 2>&1 | grep -E "romset a2twarp " ||
+    echo "romset a2twarp 缺失（可选，用于修改版的 CPU 加速，见 README）"
 fi
 
 if [ $ok = 1 ]; then echo; echo "准备完毕，运行 ./play_seafox.sh 开始游戏"; else echo; echo "还有问题，见上面的提示"; exit 1; fi

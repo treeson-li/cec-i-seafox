@@ -20,8 +20,8 @@
 -- 追踪鱼雷：第 4 关（敌潜艇开始放磁性炸弹，也就是 4 型追踪对象）起才能用；同屏 1 枚，每发扣 2 发弹药。
 
 local m = manager.machine
-local cpu = m.devices[":maincpu"]
-local space = cpu.spaces["program"]
+local cpu = seafox_cpu()   -- 读寄存器用；插了加速卡时是卡上的 CPU，见 seafox_accel.lua
+local space = m.devices[":maincpu"].spaces["program"]
 
 local RIGHT_DESC = 0x8C09
 local LEFT_DESC, HOMING_R, HOMING_L = 0x0300, 0x0340, 0x0380

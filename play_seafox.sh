@@ -12,6 +12,8 @@
 #   向前发射不限颗数；向上发射默认同屏 1 颗，可用 SEAFOX_MAX_UP=2 放宽（每多 1 颗游戏速度减半）
 #   停船时油耗减半（SEAFOX_IDLE_FUEL=10 恢复原版）；无限命（SEAFOX_INFINITE_LIVES=0 恢复原版）。
 #   玩法修改见 tools/seafox_patches.lua
+#   速度：固定每秒 35 拍（SEAFOX_TICK_RATE 可调，0 = 原版不限速）；有 roms/a2twarp.zip 时插 TransWarp 加速卡，
+#   后期东西多也不变慢（SEAFOX_ACCEL=0 不插）。见 tools/seafox_speed.lua、tools/seafox_accel.lua
 # 退出：先按 Fn+Delete（MAME 的 UI 切换键）再按 Esc。
 cd "$(dirname "$0")"
 SEAFOX_ORIGINAL=0
@@ -30,5 +32,11 @@ TAPE="tapes/Face A.wav"; export ENTER_AT=6.5
 if [ ! -f "$TAPE" ] || [ ! -f roms/ceci.zip ]; then
   echo "缺少磁带或 ROM，请先运行 ./setup.sh"; exit 1
 fi
-exec mame ceci -rompath roms -cass "$TAPE" -window -nomaximize -skip_gameinfo \
+# 修改版插 TransWarp 加速卡（需要 roms/a2twarp.zip）
+CARD=""
+if [ $SEAFOX_ORIGINAL = 0 ] && [ "${SEAFOX_ACCEL:-1}" != 0 ]; then
+  if [ -f roms/a2twarp.zip ]; then CARD="-sl4 twarp"
+  else echo "没有 roms/a2twarp.zip，不加速运行（后期关卡会变慢），见 README"; fi
+fi
+exec mame ceci -rompath roms $CARD -cass "$TAPE" -window -nomaximize -skip_gameinfo \
   -snapshot_directory snap -autoboot_script tools/play_seafox.lua
