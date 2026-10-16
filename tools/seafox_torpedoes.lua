@@ -13,8 +13,9 @@
 --    形状指针同时充当种类标记，对象表压缩搬移时会跟着一起搬，不会丢。
 --    画图程序 $1AF0 擦除时用的是上次画时保存的指针和坐标，所以飞行中换指针（掉头）不会留残影。
 -- 3. 读 tap 拦截 $7F8A：向左的让游戏加 -4（见下方说明）。追踪鱼雷（G 键，向右发射）每节拍找
---    我方潜艇右侧、离鱼雷最近的敌潜艇，按目标在左还是在右加 -6 或 +6（可以掉头），上下直接改 y（每节拍 2）。
---    没有目标就直线飞，越界后由游戏移除。
+--    我方潜艇右侧、离鱼雷最近的敌潜艇。横向有速度（最快 ±6）和固定的加速度（每节拍 1）：
+--    目标在哪边就朝哪边加速，掉头时先减速到 0 再反向加速，像真实的物体一样画出一段弧线；
+--    上下直接改 y（每节拍 2）。没有目标就保持原方向加速到最快直线飞，越界后由游戏移除。
 --    越过左边界后 x 回绕成 $FFxx，游戏自己的"超出右边界"检查会把它移除。
 -- 追踪鱼雷：第 4 关（敌潜艇开始放磁性炸弹，也就是 4 型追踪对象）起才能用；同屏 1 枚，每发扣 2 发弹药。
 
@@ -26,7 +27,9 @@ local RIGHT_DESC = 0x8C09
 local LEFT_DESC, HOMING_R, HOMING_L = 0x0300, 0x0340, 0x0380
 local HOMING_AMMO = 2          -- 每发扣的弹药（游戏自己扣 1，这里多扣 1）
 local HOMING_DY = 2            -- 每节拍上下最多移动的像素
-local HOMING_DX = 6            -- 每节拍左右移动的像素（普通鱼雷 4；敌潜艇逃跑时比 4 快，追不上）
+local HOMING_DX = 6            -- 左右最快每节拍移动的像素（普通鱼雷 4；敌潜艇逃跑时比 4 快，追不上）
+local HOMING_ACCEL = tonumber(os.getenv("SEAFOX_HOMING_ACCEL")) or 1   -- 左右加速度（像素/节拍²）：从 +6 掉头到 -6 要 12 个节拍，
+-- 掉头时多冲出去约 18 像素。0.5 时要冲出 36 像素，目标多从右边进场，鱼雷常在掉头前冲出右边界被移除
 local HOMING_LIFETIME = 400    -- 追踪的节拍数，之后直线飞出屏幕，免得一直绕圈
 local HOMING_FROM_MISSION = 4  -- 磁性炸弹（$81F4 上限）从第 4 关开始出现，追踪鱼雷也从这关起才能用
 -- 追踪的目标：只追敌潜艇（3 型）。敌方追踪导弹、瞄准弹、水面目标舰、加油船等都不追
@@ -96,6 +99,7 @@ end
 local shape_width, shape_height = 8, 3
 local active = false
 local homing_ticks = 0
+local homing_vx, homing_frac = 0, 0   -- 追踪鱼雷的横向速度和不足 1 像素的位移余数（同屏只有一枚）
 
 local function is_homing(p) return p == HOMING_R or p == HOMING_L end
 
@@ -138,7 +142,7 @@ SEAFOX_TORPEDO_CREATE_TAP = space:install_write_tap(0x1D6C, 0x1D6C + 31 * 8, "se
   if k == "homing" then
     set_ptr(y, HOMING_R)
     space:write_u8(0x17AB + y, 0)   -- 不继承潜艇的纵向速度，上下由追踪逻辑控制
-    homing_ticks = 0
+    homing_ticks, homing_vx, homing_frac = 0, HOMING_DX, 0
   else
     set_ptr(y, LEFT_DESC)
     local x = read16(0x7E0C) - shape_width
@@ -167,21 +171,31 @@ local function find_target(mx, my)
   return bx, by
 end
 
--- 每节拍调用一次（同屏只有一枚）：返回这一步是否向左，同时直接改 y
-local function steer(x, going_left)
+-- 每节拍调用一次（同屏只有一枚）：按目标调整横向速度、直接改 y，返回这一步横向移动的整数像素
+local function steer(x)
   homing_ticks = homing_ticks + 1
-  if homing_ticks > HOMING_LIFETIME then return going_left end
-  local mx = space:read_u8(0x16AB + x) + 256 * space:read_u8(0x16AC + x) + shape_width // 2
-  local my = space:read_u8(0x16AD + x) + shape_height // 2
-  local tx, ty = find_target(mx, my)
-  if not tx then return going_left end
-  if tx < mx - 4 then going_left = true elseif tx > mx + 4 then going_left = false end
-  local dy = ty - my
-  if dy > HOMING_DY then dy = HOMING_DY elseif dy < -HOMING_DY then dy = -HOMING_DY end
-  local ny = space:read_u8(0x16AD + x) + dy
-  if ny < Y_MIN then ny = Y_MIN elseif ny > Y_MAX then ny = Y_MAX end
-  space:write_u8(0x16AD + x, ny)
-  return going_left
+  -- 想去的方向：默认保持当前方向
+  local want = homing_vx < 0 and -HOMING_DX or HOMING_DX
+  if homing_ticks <= HOMING_LIFETIME then
+    local mx = space:read_u8(0x16AB + x) + 256 * space:read_u8(0x16AC + x) + shape_width // 2
+    local my = space:read_u8(0x16AD + x) + shape_height // 2
+    local tx, ty = find_target(mx, my)
+    if tx then
+      if tx < mx - 4 then want = -HOMING_DX elseif tx > mx + 4 then want = HOMING_DX end
+      local dy = ty - my
+      if dy > HOMING_DY then dy = HOMING_DY elseif dy < -HOMING_DY then dy = -HOMING_DY end
+      local ny = space:read_u8(0x16AD + x) + dy
+      if ny < Y_MIN then ny = Y_MIN elseif ny > Y_MAX then ny = Y_MAX end
+      space:write_u8(0x16AD + x, ny)
+    end
+  end
+  -- 速度每节拍最多变化 HOMING_ACCEL
+  if homing_vx < want then homing_vx = math.min(homing_vx + HOMING_ACCEL, want)
+  elseif homing_vx > want then homing_vx = math.max(homing_vx - HOMING_ACCEL, want) end
+  homing_frac = homing_frac + homing_vx
+  local step = homing_frac >= 0 and math.floor(homing_frac) or -math.floor(-homing_frac)
+  homing_frac = homing_frac - step
+  return step
 end
 
 -- $7F8A 只在 $7F24 的 ADC 里读，此时 X 是对象偏移
@@ -189,17 +203,17 @@ SEAFOX_TORPEDO_MOVE_TAP = space:install_read_tap(0x7F8A, 0x7F8A, "seafox_torpedo
   if not active then return data end
   local x = cpu.state["X"].value
   local p = ptr_of(x)
-  local left, step = nil, data
+  local step
   if p == LEFT_DESC then
-    left = true
+    step = -data
   elseif is_homing(p) then
-    left = steer(x, p == HOMING_L)
-    set_ptr(x, left and HOMING_L or HOMING_R)
-    step = HOMING_DX
+    step = steer(x)
+    if homing_vx ~= 0 then set_ptr(x, homing_vx < 0 and HOMING_L or HOMING_R) end   -- 图形朝向跟着速度方向
   else
     return data
   end
-  if not left then return step end
+  if step >= 0 then return step end
+  step = -step
   -- 游戏执行 LDA lo / ADC $7F8A / STA lo / LDA hi / ADC #0 / STA hi，低字节已读进 A，不能在这里改。
   -- 让它加 -step（如 $FC），并预先把高字节减 1：低字节 >= step 时进位为 1，高字节不变；
   -- 否则进位为 0，高字节正好借位减 1。
