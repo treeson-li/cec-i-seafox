@@ -11,11 +11,11 @@
 --    向左（镜像）、追踪向右、追踪向左（换调色板，颜色和普通鱼雷不同）。
 -- 2. 控制层注入"向前发射"键并标记种类；游戏创建对象时（写 $1D6C,y），换形状指针、调整起点。
 --    形状指针同时充当种类标记，对象表压缩搬移时会跟着一起搬，不会丢。
---    画图程序 $1AF0 擦除时用的是上次画时保存的指针和坐标，所以飞行中换指针（掉头）不会留残影。
--- 3. 读 tap 拦截 $7F8A：向左的让游戏加 -4（见下方说明）；追踪的每节拍找最近的水下敌人，
---    （只追敌潜艇）左右决定加 +6 还是 -6，上下直接改 y（每节拍 2）。
+-- 3. 读 tap 拦截 $7F8A：向左的让游戏加 -4（见下方说明）。追踪鱼雷左右方向在发射时定死（G 向右、S 向左），
+--    不掉头，每节拍横向走 6；同时找前方（飞行方向上）离它最近的敌潜艇，上下直接改 y（每节拍最多 4）对准它。
+--    前方没有敌潜艇就直线飞，越界后由游戏移除。
 --    越过左边界后 x 回绕成 $FFxx，游戏自己的"超出右边界"检查会把它移除。
--- 追踪鱼雷：同屏 1 枚，每发扣 2 发弹药，发射后 30 秒才能再发。
+-- 追踪鱼雷：同屏 1 枚，每发扣 2 发弹药。
 
 local m = manager.machine
 local cpu = m.devices[":maincpu"]
@@ -23,10 +23,8 @@ local space = cpu.spaces["program"]
 
 local RIGHT_DESC = 0x8C09
 local LEFT_DESC, HOMING_R, HOMING_L = 0x0300, 0x0340, 0x0380
-local HOMING_COOLDOWN = tonumber(os.getenv("SEAFOX_HOMING_COOLDOWN")) or 30  -- 秒
 local HOMING_AMMO = 2          -- 每发扣的弹药（游戏自己扣 1，这里多扣 1）
-local HOMING_LIFETIME = 400    -- 追踪的节拍数，之后直线飞出屏幕，免得没目标时一直转
-local HOMING_DY = 2            -- 每节拍上下最多移动的像素
+local HOMING_DY = 4            -- 每节拍上下最多移动的像素（方向不能掉头，2 太小，迎面来的敌潜艇常常对不准）
 local HOMING_DX = 6            -- 每节拍左右移动的像素（普通鱼雷 4；敌潜艇逃跑时比 4 快，追不上）
 -- 追踪的目标：只追敌潜艇（3 型）。敌方追踪导弹、瞄准弹、水面目标舰、加油船等都不追
 -- （途中撞上的照样会炸，碰撞由游戏自己判断）
@@ -94,8 +92,6 @@ end
 
 local shape_width, shape_height = 8, 3
 local active = false
-local last_homing = -1e9      -- 上次发射追踪鱼雷的时间（模拟时间，秒）
-local homing_ticks = 0
 
 local function is_homing(p) return p == HOMING_R or p == HOMING_L end
 
@@ -109,7 +105,7 @@ end
 
 -- 给 seafox_controls.lua 用：现在能不能发追踪鱼雷（弹药够不够由游戏自己判断，见下方弹药 tap）
 function seafox_homing_ready()
-  return active and m.time:as_double() - last_homing >= HOMING_COOLDOWN and not homing_in_flight()
+  return active and not homing_in_flight()
 end
 
 local function pending_kind() return seafox_pending_kind and seafox_pending_kind() end
@@ -145,12 +141,11 @@ SEAFOX_TORPEDO_CREATE_TAP = space:install_write_tap(0x1D6C, 0x1D6C + 31 * 8, "se
   end
   if k ~= "left" then
     space:write_u8(0x17AB + y, 0)   -- 不继承潜艇的纵向速度，上下由追踪逻辑控制
-    last_homing, homing_ticks = m.time:as_double(), 0
   end
 end)
 
--- 找离 (mx, my) 最近的追踪目标，返回它的中心
-local function find_target(mx, my)
+-- 找 (mx, my) 前方（going_left 为真时是左边，否则右边）最近的追踪目标，返回它的中心
+local function find_target(mx, my, going_left)
   local best, bx, by
   for i = 0, space:read_u8(0x16A6) - 1 do
     local o = i * 8
@@ -159,7 +154,7 @@ local function find_target(mx, my)
       local p = ptr_of(o)
       local tx = read16(0x16AB + o) + space:read_u8(p + 5) * 7 // 2
       local ty = space:read_u8(0x16AD + o) + space:read_u8(p + 6) // 2
-      if tx < 0x8000 then
+      if tx < 0x8000 and (going_left and tx < mx or not going_left and tx > mx) then
         local d = math.abs(tx - mx) + math.abs(ty - my)
         if not best or d < best then best, bx, by = d, tx, ty end
       end
@@ -168,21 +163,17 @@ local function find_target(mx, my)
   return bx, by
 end
 
--- 每节拍调用一次（只有一枚在飞）：返回这一步是否向左，同时直接改 y
+-- 每节拍调用一次：上下对准前方最近的敌潜艇，直接改 y
 local function steer(x, going_left)
-  homing_ticks = homing_ticks + 1
-  if homing_ticks > HOMING_LIFETIME then return going_left end
   local mx = space:read_u8(0x16AB + x) + 256 * space:read_u8(0x16AC + x) + shape_width // 2
   local my = space:read_u8(0x16AD + x) + shape_height // 2
-  local tx, ty = find_target(mx, my)
-  if not tx then return going_left end
-  if tx < mx - 4 then going_left = true elseif tx > mx + 4 then going_left = false end
+  local tx, ty = find_target(mx, my, going_left)
+  if not tx then return end
   local dy = ty - my
   if dy > HOMING_DY then dy = HOMING_DY elseif dy < -HOMING_DY then dy = -HOMING_DY end
   local ny = space:read_u8(0x16AD + x) + dy
   if ny < Y_MIN then ny = Y_MIN elseif ny > Y_MAX then ny = Y_MAX end
   space:write_u8(0x16AD + x, ny)
-  return going_left
 end
 
 -- $7F8A 只在 $7F24 的 ADC 里读，此时 X 是对象偏移
@@ -194,8 +185,8 @@ SEAFOX_TORPEDO_MOVE_TAP = space:install_read_tap(0x7F8A, 0x7F8A, "seafox_torpedo
   if p == LEFT_DESC then
     left = true
   elseif is_homing(p) then
-    left = steer(x, p == HOMING_L)
-    set_ptr(x, left and HOMING_L or HOMING_R)
+    left = p == HOMING_L
+    steer(x, left)
     step = HOMING_DX
   else
     return data

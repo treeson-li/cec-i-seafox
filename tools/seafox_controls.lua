@@ -29,7 +29,7 @@ local KEY = {
   pause = codes("KEYCODE_ENTER", "KEYCODE_ENTER_PAD"),
 }
 -- 开火动作 -> 键表里的标记和种类。向左发射、追踪鱼雷都借用向前发射的键，由 seafox_torpedoes.lua 按种类改造；
--- once 表示按一下只发一发（追踪鱼雷还要等 seafox_homing_ready()：同屏 1 枚、30 秒冷却）
+-- once 表示按一下只发一发（追踪鱼雷还要等 seafox_homing_ready()：同屏 1 枚）
 local FIRE = {
   fire_up = { marker = 0x81 }, fire_fwd = { marker = 0x80 }, fire_left = { marker = 0x80, kind = "left" },
   homing_right = { marker = 0x80, kind = "homing_right", once = true },
