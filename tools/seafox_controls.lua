@@ -28,10 +28,12 @@ local KEY = {
   homing = codes("KEYCODE_G"),
   pause = codes("KEYCODE_ENTER", "KEYCODE_ENTER_PAD"),
 }
+-- 向上发射两发之间至少隔这么多秒（模拟时间）。按帧连发时稍按久一点就会出两发，这里按时间限住
+local UP_INTERVAL = tonumber(os.getenv("SEAFOX_UP_INTERVAL")) or 1.0
 -- 开火动作 -> 键表里的标记和种类。向左发射、追踪鱼雷都借用向前发射的键，由 seafox_torpedoes.lua 按种类改造；
--- once 表示按一下只发一发（追踪鱼雷还要等 seafox_homing_ready()：第 4 关起、同屏 1 枚）
+-- interval 表示两发之间至少隔这么多秒；once 表示按一下只发一发（追踪鱼雷还要等 seafox_homing_ready()：第 4 关起、同屏 1 枚）
 local FIRE = {
-  fire_up = { marker = 0x81 }, fire_fwd = { marker = 0x80 }, fire_left = { marker = 0x80, kind = "left" },
+  fire_up = { marker = 0x81, interval = UP_INTERVAL }, fire_fwd = { marker = 0x80 }, fire_left = { marker = 0x80, kind = "left" },
   homing = { marker = 0x80, kind = "homing", once = true },
 }
 local MASKED = { [0x88] = true, [0x95] = true, [0x8B] = true, [0x8A] = true }
@@ -88,7 +90,7 @@ function seafox_pending_kind()
 end
 
 local cur, cand, cand_frames = nil, nil, 0
-local fire_wait, fire_was_held = {}, {}
+local fire_wait, fire_was_held, fire_last = {}, {}, {}
 for name in pairs(FIRE) do fire_wait[name] = 0 end
 local pause_was_held = false
 
@@ -132,6 +134,12 @@ SEAFOX_CTRL_FRAME = emu.register_frame_done(function()
     if f.once then
       if h and not fire_was_held[name] and seafox_homing_ready and seafox_homing_ready() then
         push(key_for(f.marker, 0), false, f.kind)
+      end
+    elseif f.interval then
+      local now = m.time:as_double()
+      if h and now - (fire_last[name] or -math.huge) >= f.interval then
+        push(key_for(f.marker, 0), false, f.kind)
+        fire_last[name] = now
       end
     elseif h then
       if fire_wait[name] <= 0 then

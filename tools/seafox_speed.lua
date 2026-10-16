@@ -15,7 +15,7 @@
 local m = manager.machine
 local space = m.devices[":maincpu"].spaces["program"]
 
-local TICK_RATE = tonumber(os.getenv("SEAFOX_TICK_RATE")) or 35   -- 每秒节拍数，0 表示不限速（原版行为）
+local TICK_RATE = tonumber(os.getenv("SEAFOX_TICK_RATE")) or 17.5   -- 每秒节拍数，0 表示不限速（原版行为）
 local STUB, FLAG = 0x0200, 0x02F0
 local LOOP_TOP = 0x6CE3
 
