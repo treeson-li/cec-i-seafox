@@ -13,7 +13,7 @@
 --    形状指针同时充当种类标记，对象表压缩搬移时会跟着一起搬，不会丢。
 --    画图程序 $1AF0 擦除时用的是上次画时保存的指针和坐标，所以飞行中换指针（掉头）不会留残影。
 -- 3. 读 tap 拦截 $7F8A：向左的让游戏加 -4（见下方说明）。追踪鱼雷（G 键，向右发射）每节拍找
---    我方潜艇右侧、离鱼雷最近的敌潜艇。横向有速度（最快 ±6）和固定的加速度（每节拍 1）：
+--    我方潜艇右侧、离鱼雷最近的敌潜艇并锁定，之后不换目标；目标没了就朝它最后的位置飞过去。横向有速度（最快 ±6）和固定的加速度（每节拍 1）：
 --    目标在哪边就朝哪边加速，掉头时先减速到 0 再反向加速，像真实的物体一样画出一段弧线；
 --    上下直接改 y（每节拍 2）。没有目标就保持原方向加速到最快直线飞，越界后由游戏移除。
 --    越过左边界后 x 回绕成 $FFxx，游戏自己的"超出右边界"检查会把它移除。
@@ -100,6 +100,8 @@ local shape_width, shape_height = 8, 3
 local active = false
 local homing_ticks = 0
 local homing_vx, homing_frac = 0, 0   -- 追踪鱼雷的横向速度和不足 1 像素的位移余数（同屏只有一枚）
+local DEBUG = os.getenv("SEAFOX_DEBUG") ~= nil
+local target = nil   -- 锁定的目标 { x, y, vx, lost, reached }，见下方 acquire/track
 
 local function is_homing(p) return p == HOMING_R or p == HOMING_L end
 
@@ -142,7 +144,7 @@ SEAFOX_TORPEDO_CREATE_TAP = space:install_write_tap(0x1D6C, 0x1D6C + 31 * 8, "se
   if k == "homing" then
     set_ptr(y, HOMING_R)
     space:write_u8(0x17AB + y, 0)   -- 不继承潜艇的纵向速度，上下由追踪逻辑控制
-    homing_ticks, homing_vx, homing_frac = 0, HOMING_DX, 0
+    homing_ticks, homing_vx, homing_frac, target = 0, HOMING_DX, 0, nil
   else
     set_ptr(y, LEFT_DESC)
     local x = read16(0x7E0C) - shape_width
@@ -151,24 +153,60 @@ SEAFOX_TORPEDO_CREATE_TAP = space:install_write_tap(0x1D6C, 0x1D6C + 31 * 8, "se
   end
 end)
 
--- 在我方潜艇右侧的敌潜艇里找离 (mx, my) 最近的，返回它的中心
-local function find_target(mx, my)
-  local best, bx, by
-  local subx = read16(0x7E0C)
+-- 锁定的目标（同屏只有一枚追踪鱼雷）：发射后锁定我方潜艇右侧、离鱼雷最近的一艘敌潜艇，之后不再换。
+-- 对象表会压缩搬移，槽位不固定，所以每节拍按"上次位置 + 它自己的速度"预测，在附近找同类对象认作同一艘。
+-- 目标被击毁、开出屏幕或找不到了，就朝它最后出现的位置飞过去，到了以后保持方向直线飞。
+
+local function sub_center(o)
+  local p = ptr_of(o)
+  return read16(0x16AB + o) + space:read_u8(p + 5) * 7 // 2, space:read_u8(0x16AD + o) + space:read_u8(p + 6) // 2
+end
+
+local function visible_subs()
+  local list = {}
   for i = 0, space:read_u8(0x16A6) - 1 do
     local o = i * 8
     local st = space:read_u8(0x16AE + o)
-    if TARGET_TYPES[space:read_u8(0x16A8 + o)] and st & ST_VISIBLE ~= 0 and st & (ST_EXPLODING | ST_REMOVING) == 0 then
-      local p = ptr_of(o)
-      local tx = read16(0x16AB + o) + space:read_u8(p + 5) * 7 // 2
-      local ty = space:read_u8(0x16AD + o) + space:read_u8(p + 6) // 2
-      if tx < 0x8000 and tx > subx then
-        local d = math.abs(tx - mx) + math.abs(ty - my)
-        if not best or d < best then best, bx, by = d, tx, ty end
+    if TARGET_TYPES[space:read_u8(0x16A8 + o)] and st & ST_VISIBLE ~= 0 and st & ST_REMOVING == 0 then
+      local tx, ty = sub_center(o)
+      if tx < 0x8000 then
+        local v = space:read_u8(0x17AB + o) + 256 * space:read_u8(0x17AC + o)
+        if v >= 0x8000 then v = v - 0x10000 end
+        list[#list + 1] = { x = tx, y = ty, vx = v, exploding = st & ST_EXPLODING ~= 0 }
       end
     end
   end
-  return bx, by
+  return list
+end
+
+-- 还没锁定时：在我方潜艇右侧、没在爆炸的敌潜艇里挑离 (mx, my) 最近的
+local function acquire(mx, my)
+  local subx, best = read16(0x7E0C), nil
+  for _, t in ipairs(visible_subs()) do
+    if not t.exploding and t.x > subx then
+      local d = math.abs(t.x - mx) + math.abs(t.y - my)
+      if not best or d < best.d then best = { d = d, t = t } end
+    end
+  end
+  if best then
+    target = { x = best.t.x, y = best.t.y, vx = best.t.vx }
+    if DEBUG then print(string.format("homing: lock target at (%d,%d)", target.x, target.y)) end
+  end
+end
+
+-- 已锁定时：更新目标位置；认不出来或已在爆炸就标记为丢失，保留最后位置
+local function track()
+  local px, best = target.x + target.vx, nil
+  for _, t in ipairs(visible_subs()) do
+    local dx, dy = math.abs(t.x - px), math.abs(t.y - target.y)
+    if dx <= 12 and dy <= 4 and (not best or dx + dy < best.d) then best = { d = dx + dy, t = t } end
+  end
+  if not best or best.t.exploding then
+    target.lost = true
+    if DEBUG then print(string.format("homing: target lost, last (%d,%d)%s", target.x, target.y, best and " exploding" or "")) end
+    return
+  end
+  target.x, target.y, target.vx = best.t.x, best.t.y, best.t.vx
 end
 
 -- 每节拍调用一次（同屏只有一枚）：按目标调整横向速度、直接改 y，返回这一步横向移动的整数像素
@@ -179,8 +217,14 @@ local function steer(x)
   if homing_ticks <= HOMING_LIFETIME then
     local mx = space:read_u8(0x16AB + x) + 256 * space:read_u8(0x16AC + x) + shape_width // 2
     local my = space:read_u8(0x16AD + x) + shape_height // 2
-    local tx, ty = find_target(mx, my)
-    if tx then
+    if not target then acquire(mx, my) elseif not target.lost then track() end
+    if target and target.lost and not target.reached
+       and math.abs(target.x - mx) <= HOMING_DX and math.abs(target.y - my) <= HOMING_DY then
+      target.reached = true   -- 到了目标最后的位置，之后直线飞
+      if DEBUG then print("homing: reached last position") end
+    end
+    if target and not target.reached then
+      local tx, ty = target.x, target.y
       if tx < mx - 4 then want = -HOMING_DX elseif tx > mx + 4 then want = HOMING_DX end
       local dy = ty - my
       if dy > HOMING_DY then dy = HOMING_DY elseif dy < -HOMING_DY then dy = -HOMING_DY end
