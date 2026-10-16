@@ -6,8 +6,8 @@
 -- 这里每帧读电脑上的按键，方向键合成 8 方向，状态稳定后把对应的游戏键
 -- 注入 $C000 的读取结果，松开全部方向键时注入停船键；开火键同样注入。
 -- 方向键在模拟键盘上产生的 $88/$95/$8B/$8A（$88 = Ctrl-H 会反转水平方向）一律屏蔽；
--- 游戏进行中再屏蔽模拟键盘上的 D/F/S/G/空格/回车，它们改由这里处理（D 改为向左发射，S/G 为向左/向右的
--- 追踪鱼雷，见 seafox_torpedoes.lua；回车改为暂停/继续）。
+-- 游戏进行中再屏蔽模拟键盘上的 D/F/G/空格/回车，它们改由这里处理（D 改为向左发射，G 为追踪鱼雷，
+-- 见 seafox_torpedoes.lua；回车改为暂停/继续）。
 
 local m = manager.machine
 local cpu = m.devices[":maincpu"]
@@ -25,19 +25,18 @@ local KEY = {
   fire_up = codes("KEYCODE_SPACE", "KEYCODE_X"),
   fire_fwd = codes("KEYCODE_F", "KEYCODE_Z"),
   fire_left = codes("KEYCODE_D"),
-  homing_left = codes("KEYCODE_S"), homing_right = codes("KEYCODE_G"),
+  homing = codes("KEYCODE_G"),
   pause = codes("KEYCODE_ENTER", "KEYCODE_ENTER_PAD"),
 }
 -- 开火动作 -> 键表里的标记和种类。向左发射、追踪鱼雷都借用向前发射的键，由 seafox_torpedoes.lua 按种类改造；
--- once 表示按一下只发一发（追踪鱼雷还要等 seafox_homing_ready()：同屏 1 枚）
+-- once 表示按一下只发一发（追踪鱼雷还要等 seafox_homing_ready()：第 4 关起、同屏 1 枚）
 local FIRE = {
   fire_up = { marker = 0x81 }, fire_fwd = { marker = 0x80 }, fire_left = { marker = 0x80, kind = "left" },
-  homing_right = { marker = 0x80, kind = "homing_right", once = true },
-  homing_left = { marker = 0x80, kind = "homing_left", once = true },
+  homing = { marker = 0x80, kind = "homing", once = true },
 }
 local MASKED = { [0x88] = true, [0x95] = true, [0x8B] = true, [0x8A] = true }
 local MASKED_IN_PLAY = { [0xA0] = true, [0xC4] = true, [0xC6] = true, [0xE4] = true, [0xE6] = true, [0x8D] = true,
-  [0xD3] = true, [0xF3] = true, [0xC7] = true, [0xE7] = true }
+  [0xC7] = true, [0xE7] = true }
 -- 游戏的暂停键是 Esc（$704B）：暂停后等任意键继续。回车注入 Esc，暂停中再按回车注入 Esc 即继续
 local ESC = 0x1B
 local SETTLE_FRAMES = 3   -- 方向组合需稳定这么多帧才生效，避免松开斜向时闪一下直行
@@ -149,7 +148,7 @@ end)
 
 function seafox_controls_start()
   enabled = true
-  print("Seafox controls: 方向键移动（可斜向），空格向上、F 向右、D 向左发射，G/S 向右/向左发追踪鱼雷，回车暂停/继续")
+  print("Seafox controls: 方向键移动（可斜向），空格向上、F 向右、D 向左发射，G 发追踪鱼雷（第 4 关起），回车暂停/继续")
 end
 
 -- 测试钩子：SEAFOX_FAKE_KEYS="t0:keys;t1:keys;..."（秒:逗号分隔的动作名），用于无界面验证
