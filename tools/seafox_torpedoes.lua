@@ -28,6 +28,7 @@ local LEFT_DESC, HOMING_R, HOMING_L = 0x0300, 0x0340, 0x0380
 local HOMING_AMMO = 2          -- 每发扣的弹药（游戏自己扣 1，这里多扣 1）
 local HOMING_DY = 2            -- 每节拍上下最多移动的像素
 local HOMING_DX = 6            -- 左右最快每节拍移动的像素（普通鱼雷 4；敌潜艇逃跑时比 4 快，追不上）
+local HOMING_MIN_LEAD = 40      -- 锁定目标时，目标至少要在鱼雷前方这么多像素
 local HOMING_ACCEL = tonumber(os.getenv("SEAFOX_HOMING_ACCEL")) or 1   -- 左右加速度（像素/节拍²）：从 +6 掉头到 -6 要 12 个节拍，
 -- 掉头时多冲出去约 18 像素。0.5 时要冲出 36 像素，目标多从右边进场，鱼雷常在掉头前冲出右边界被移除
 local HOMING_LIFETIME = 400    -- 追踪的节拍数，之后直线飞出屏幕，免得一直绕圈
@@ -179,18 +180,24 @@ local function visible_subs()
   return list
 end
 
--- 还没锁定时：在我方潜艇右侧、没在爆炸的敌潜艇里挑离 (mx, my) 最近的
+-- 还没锁定时：在我方潜艇右侧、没在爆炸的敌潜艇里挑一艘能"迎上去打"的，再从中选离 (mx, my) 最近的。
+-- 能迎上去打：在鱼雷前方（右边）至少 HOMING_MIN_LEAD 像素，而且照双方现在的速度，
+-- 鱼雷在和它横向相遇之前来得及把上下对准（每节拍 HOMING_DY）。
+-- 太近或来不及对准的不选，免得刚锁定就交错而过、只能掉头追。都不满足就先直线飞，下个节拍再挑。
 local function acquire(mx, my)
   local subx, best = read16(0x7E0C), nil
   for _, t in ipairs(visible_subs()) do
-    if not t.exploding and t.x > subx then
+    local lead = t.x - mx
+    local closing = homing_vx - t.vx          -- 每节拍横向接近多少像素
+    if not t.exploding and t.x > subx and lead >= HOMING_MIN_LEAD and closing > 0
+       and lead / closing >= math.abs(t.y - my) / HOMING_DY then
       local d = math.abs(t.x - mx) + math.abs(t.y - my)
       if not best or d < best.d then best = { d = d, t = t } end
     end
   end
   if best then
     target = { x = best.t.x, y = best.t.y, vx = best.t.vx }
-    if DEBUG then print(string.format("homing: lock target at (%d,%d)", target.x, target.y)) end
+    if DEBUG then print(string.format("homing: lock target at (%d,%d) vx=%d", target.x, target.y, target.vx)) end
   end
 end
 
