@@ -8,8 +8,11 @@
 -- 做法（不修改游戏代码）：主循环结尾是 $6D17 的 JMP $6CE3。游戏取这条指令的操作数时，读 tap 让它读到 $0200，
 -- 于是跳到放在 $0200 的一小段等待代码（游戏运行时不用这块内存）：
 --   $0200  LDA $02F0   ; 读 tap：到时间了读出 1，否则读出 0
---   $0203  BEQ $0200
---   $0205  JMP $6CE3   ; 回到主循环开头
+--   $0203  BNE $020C
+--   $0205  DEC $02F1   ; 没到时间：空转 256 圈（约 2300 个周期）再查，
+--   $0208  BNE $0205   ;   免得每几个周期就调一次 Lua（每秒几十万次，还产生大量垃圾，会卡住 MAME 界面）
+--   $020A  BEQ $0200   ;   只用 A 和标志位，X/Y 不动
+--   $020C  JMP $6CE3   ; 回到主循环开头
 -- 时间用的是模拟机器的时间，MAME 正常限速运行时就等于真实时间。
 
 local m = manager.machine
@@ -43,7 +46,8 @@ end)
 -- 游戏装载完成后调用
 function seafox_speed_start()
   if TICK_RATE <= 0 then return end
-  local code = { 0xAD, FLAG & 0xFF, FLAG >> 8, 0xF0, 0xFB, 0x4C, LOOP_TOP & 0xFF, LOOP_TOP >> 8 }
+  local code = { 0xAD, FLAG & 0xFF, FLAG >> 8, 0xD0, 0x07, 0xCE, (FLAG + 1) & 0xFF, (FLAG + 1) >> 8, 0xD0, 0xFB,
+    0xF0, 0xF4, 0x4C, LOOP_TOP & 0xFF, LOOP_TOP >> 8 }
   for i, b in ipairs(code) do space:write_u8(STUB + i - 1, b) end
   next_tick = m.time:as_double()
   active = true
