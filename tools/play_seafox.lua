@@ -5,7 +5,7 @@ local original = os.getenv("SEAFOX_ORIGINAL") == "1"
 if not original then
   dofile("tools/seafox_controls.lua")
   dofile("tools/seafox_patches.lua")
-  dofile("tools/seafox_leftfire.lua")
+  dofile("tools/seafox_torpedoes.lua")
 end
 local m = manager.machine
 local cpu = m.devices[":maincpu"]
@@ -26,7 +26,7 @@ SEAFOX_PLAY_TAP = cpu.spaces["program"]:install_read_tap(0xC052, 0xC052, "seafox
   if step == 3 and pc >= 0x2900 and pc < 0x2950 then
     step = 4; cass:stop(); m.video.throttled = true
     print("Seafox loaded, starting game at $67D4" .. (original and " (original)" or ""))
-    if not original then seafox_controls_start(); seafox_leftfire_start() end
+    if not original then seafox_controls_start(); seafox_torpedoes_start() end
   end
   return d
 end)

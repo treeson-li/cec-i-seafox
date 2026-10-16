@@ -6,8 +6,8 @@
 -- 这里每帧读电脑上的按键，方向键合成 8 方向，状态稳定后把对应的游戏键
 -- 注入 $C000 的读取结果，松开全部方向键时注入停船键；开火键同样注入。
 -- 方向键在模拟键盘上产生的 $88/$95/$8B/$8A（$88 = Ctrl-H 会反转水平方向）一律屏蔽；
--- 游戏进行中再屏蔽模拟键盘上的 D/F/空格/回车，它们改由这里处理（D 改为向左发射，见 seafox_leftfire.lua；
--- 回车改为暂停/继续）。
+-- 游戏进行中再屏蔽模拟键盘上的 D/F/S/G/空格/回车，它们改由这里处理（D 改为向左发射，S/G 为向左/向右的
+-- 追踪鱼雷，见 seafox_torpedoes.lua；回车改为暂停/继续）。
 
 local m = manager.machine
 local cpu = m.devices[":maincpu"]
@@ -25,12 +25,19 @@ local KEY = {
   fire_up = codes("KEYCODE_SPACE", "KEYCODE_X"),
   fire_fwd = codes("KEYCODE_F", "KEYCODE_Z"),
   fire_left = codes("KEYCODE_D"),
+  homing_left = codes("KEYCODE_S"), homing_right = codes("KEYCODE_G"),
   pause = codes("KEYCODE_ENTER", "KEYCODE_ENTER_PAD"),
 }
--- 开火动作 -> 键表里的标记（向左发射借用向前发射的键，由 seafox_leftfire.lua 改方向）
-local FIRE = { fire_up = 0x81, fire_fwd = 0x80, fire_left = 0x80 }
+-- 开火动作 -> 键表里的标记和种类。向左发射、追踪鱼雷都借用向前发射的键，由 seafox_torpedoes.lua 按种类改造；
+-- once 表示按一下只发一发（追踪鱼雷还要等 seafox_homing_ready()：同屏 1 枚、30 秒冷却）
+local FIRE = {
+  fire_up = { marker = 0x81 }, fire_fwd = { marker = 0x80 }, fire_left = { marker = 0x80, kind = "left" },
+  homing_right = { marker = 0x80, kind = "homing_right", once = true },
+  homing_left = { marker = 0x80, kind = "homing_left", once = true },
+}
 local MASKED = { [0x88] = true, [0x95] = true, [0x8B] = true, [0x8A] = true }
-local MASKED_IN_PLAY = { [0xA0] = true, [0xC4] = true, [0xC6] = true, [0xE4] = true, [0xE6] = true, [0x8D] = true }
+local MASKED_IN_PLAY = { [0xA0] = true, [0xC4] = true, [0xC6] = true, [0xE4] = true, [0xE6] = true, [0x8D] = true,
+  [0xD3] = true, [0xF3] = true, [0xC7] = true, [0xE7] = true }
 -- 游戏的暂停键是 Esc（$704B）：暂停后等任意键继续。回车注入 Esc，暂停中再按回车注入 Esc 即继续
 local ESC = 0x1B
 local SETTLE_FRAMES = 3   -- 方向组合需稳定这么多帧才生效，避免松开斜向时闪一下直行
@@ -71,24 +78,25 @@ end)
 SEAFOX_STROBE_TAP = space:install_read_tap(0xC010, 0xC010, "seafox_strobe", function(offset, data, mask)
   if enabled and #queue > 0 then
     local e = table.remove(queue, 1)
-    if DEBUG then print(string.format("t=%.2f game took key %s%s", m.time:as_double(), string.char(e.key), e.left and " (left)" or "")) end
+    if DEBUG then print(string.format("t=%.2f game took key %s%s", m.time:as_double(), string.char(e.key), e.kind and " (" .. e.kind .. ")" or "")) end
   end
   return data
 end)
 
--- 给 seafox_leftfire.lua 用：游戏此刻正在处理的键是不是"向左发射"
-function seafox_pending_left()
-  return #queue > 0 and queue[1].left == true
+-- 给 seafox_torpedoes.lua 用：游戏此刻正在处理的键属于哪种发射（nil 为普通）
+function seafox_pending_kind()
+  return #queue > 0 and queue[1].kind or nil
 end
 
 local cur, cand, cand_frames = nil, nil, 0
-local fire_wait = { fire_fwd = 0, fire_up = 0, fire_left = 0 }
+local fire_wait, fire_was_held = {}, {}
+for name in pairs(FIRE) do fire_wait[name] = 0 end
 local pause_was_held = false
 
 -- 游戏不读键时（如开场驶入动画）队列会积压：方向只保留最新一条，开火最多攒 2 发
-local function push(k, is_dir, is_left)
+local function push(k, is_dir, kind)
   if not k then return end
-  local e = { key = k & 0x7F, dir = is_dir, left = is_left, t = m.time:as_double() }
+  local e = { key = k & 0x7F, dir = is_dir, kind = kind, t = m.time:as_double() }
   local fires = 0
   for i = #queue, 1, -1 do
     if queue[i].dir and is_dir then table.remove(queue, i)
@@ -120,22 +128,28 @@ SEAFOX_CTRL_FRAME = emu.register_frame_done(function()
   local pause_held = held("pause")
   if playing and pause_held and not pause_was_held then push(ESC, false) end
   pause_was_held = pause_held
-  for name, marker in pairs(FIRE) do
-    if playing and held(name) then
+  for name, f in pairs(FIRE) do
+    local h = playing and held(name)
+    if f.once then
+      if h and not fire_was_held[name] and seafox_homing_ready and seafox_homing_ready() then
+        push(key_for(f.marker, 0), false, f.kind)
+      end
+    elseif h then
       if fire_wait[name] <= 0 then
-        push(key_for(marker, 0), false, name == "fire_left")
+        push(key_for(f.marker, 0), false, f.kind)
         fire_wait[name] = FIRE_REPEAT
       end
       fire_wait[name] = fire_wait[name] - 1
     else
       fire_wait[name] = 0
     end
+    fire_was_held[name] = h
   end
 end)
 
 function seafox_controls_start()
   enabled = true
-  print("Seafox controls: 方向键移动（可斜向），空格向上、F 向右、D 向左发射，回车暂停/继续")
+  print("Seafox controls: 方向键移动（可斜向），空格向上、F 向右、D 向左发射，G/S 向右/向左发追踪鱼雷，回车暂停/继续")
 end
 
 -- 测试钩子：SEAFOX_FAKE_KEYS="t0:keys;t1:keys;..."（秒:逗号分隔的动作名），用于无界面验证

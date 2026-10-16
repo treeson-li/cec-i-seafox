@@ -7,7 +7,8 @@
 #
 # 标题/演示画面按空格开始。
 # 修改版：方向键移动（同时按两个=斜向，松开=停船），游戏中空格向上、F 向右、D 向左发射，回车暂停/继续；
-#   原来的 U/I/K/,/M/N/H/Y/J 键照样能用。控制层见 tools/seafox_controls.lua，向左发射见 tools/seafox_leftfire.lua
+#   G/S 向右/向左发追踪鱼雷（同屏 1 枚，每发 2 发弹药，30 秒一发）；
+#   原来的 U/I/K/,/M/N/H/Y/J 键照样能用。控制层见 tools/seafox_controls.lua，向左发射和追踪鱼雷见 tools/seafox_torpedoes.lua
 #   向前发射不限颗数；向上发射默认同屏 1 颗，可用 SEAFOX_MAX_UP=2 放宽（每多 1 颗游戏速度减半）
 #   停船时油耗减半（SEAFOX_IDLE_FUEL=10 恢复原版）；无限命（SEAFOX_INFINITE_LIVES=0 恢复原版）。
 #   玩法修改见 tools/seafox_patches.lua
