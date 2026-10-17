@@ -1,6 +1,7 @@
 # 有版权的文件不入库：ROM 需自备，磁带和说明书由 setup.sh 从 archive.org 下载
 roms/*.zip
 tapes/*.wav
+tapes/*/*.wav
 manual.jpg
 # 解码出的游戏数据（研究用中间产物，可由 tools/research 重新生成）
 decoded/

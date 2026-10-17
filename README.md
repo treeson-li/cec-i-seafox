@@ -39,6 +39,7 @@ cd cec-i-seafox
 |---|---|---|
 | MAME（测试版本 0.289） | macOS: `brew install mame`；其他系统见 [mamedev.org](https://www.mamedev.org/release.html) | 自己安装，`setup.sh` 会检查 |
 | 磁带录音 `tapes/Face A.wav`、`Face B.wav`，说明书 `manual.jpg` | [archive.org 上的原始转录](https://archive.org/details/haizhan-seafox-zhonghua-xuexi-ji-cec-i-apple-ii-china-tape) | `setup.sh` 自动下载并校验 SHA1 |
+| 《警察抓小偷》磁带录音 `tapes/loderunner/Face A.wav`、`Face B.wav` | [archive.org 上的原始转录](https://archive.org/details/jingcha-zhua-xiaotou-lode-runner-zhonghua-xuexi-ji-cec-i-apple-ii-china-tape) | `setup.sh` 自动下载并校验 SHA1 |
 | ROM | 见下一节 | **自备** |
 
 ### ROM
@@ -133,6 +134,30 @@ a2twarp.zip（可选）
 
 **向上发射的颗数**：每颗向上的炮弹都拖着一条要重绘的尾迹，很费 CPU。未加速时同屏 1/2/3 颗分别是每秒约 45/22/12 个节拍，所以没有加速卡时默认只放 1 颗；插了加速卡后 3 颗也能保持每秒约 28 拍以上，默认 3 颗。向前的炮弹开销很小，不受影响。
 
+## 另一个游戏：警察抓小偷（Lode Runner）
+
+成都三开元电脑经营部 1988 年发行的磁带版 *Lode Runner*（标题画面写着"警察抓小偷 (LODE RUNNER 九)"），没有修改。
+
+```sh
+./play_loderunner.sh
+```
+
+装载阶段同样关闭限速，十几秒后出现中文标题画面，"HIT ANY KEY TO BEGIN" 时按任意键开始；之后是演示画面，再按一下键进入第一关，每关开始（和每次死后）也要按一下键才动。
+
+| 按键 | 作用 |
+|---|---|
+| 方向键 | 移动、爬梯子、攀绳；按住走，松开站住 |
+| Z / X（或 U / O） | 向左 / 向右挖洞 |
+| Esc | 暂停，再按 Esc 继续 |
+| Ctrl-A | 放弃这条命（被困住时用） |
+| Ctrl-R | 结束这一局 |
+| Ctrl-S | 声音开关 |
+| Ctrl-H / Ctrl-U | 游戏变慢 / 变快 |
+
+原版的方向键是 I/J/K/L，按一下就一直往那个方向走，按空格才停，现在也还能用。电脑方向键在模拟键盘上本来是 Ctrl-H/U/K/J，会改游戏速度、切到摇杆模式，所以 `tools/loderunner_controls.lua` 把它们换成了"按住走、松开停"的 I/J/K/L。
+
+原始录音的波形上下不对称，CEC-I ROM 的读带例程在 MAME 里对不准同步位，直接放原录音装不进去。所以第一次运行时会先用 `tools/loderunner_tape.py` 把两面录音解码（三条记录按 SHA1 校验，A 面第三条有坏块，取 B 面的），再合成一盘干净的标准磁带 `tapes/loderunner/clean.wav`。格式和装载过程见 [docs/TECHNICAL.md](docs/TECHNICAL.md) 第 6 节。
+
 ## 文件
 
 ```
@@ -147,6 +172,11 @@ tools/seafox_accel.lua     修改版：TransWarp 加速卡的开关（装带、�
 tools/research/            磁带解码和程序分析用的脚本（玩游戏不需要）
 docs/TECHNICAL.md          磁带格式、装载过程、游戏内部变量
 tapes/submissionInfos.txt  archive.org 上磁带转录的说明
+play_loderunner.sh         《警察抓小偷》启动脚本
+tools/play_loderunner.lua  《警察抓小偷》自动装载
+tools/loderunner_controls.lua 《警察抓小偷》方向键控制层
+tools/loderunner_tape.py   《警察抓小偷》磁带解码与合成
+tapes/loderunner/          《警察抓小偷》磁带（录音由 setup.sh 下载，clean.wav 自动生成）
 ```
 
 ## 说明

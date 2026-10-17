@@ -1,0 +1,25 @@
+Common Info:
+	Title: 警察抓小偷 / Lode Runner
+	Publisher: 成都三开元电脑部
+	Developer: 
+	Disc Number / Letter: 
+	Disc Title: 
+	System: 中华学习机 CEC-I (Apple II clone)
+	Media Type: Tape
+	Dumping tool : Sony TCM-939
+	Category: Game
+	Region: China
+	Languages: 
+	Date : 198x
+	Serial: 
+	Barcode: 
+	Error Count: 
+	Contents: 
+	Comments : 
+
+Version and Editions:
+	Version: 
+	Edition/Release: Original
+
+Copy Protection:
+	Copy Protection: 

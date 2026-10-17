@@ -14,17 +14,22 @@ fi
 echo "== 磁带与说明书（archive.org）"
 ITEM=https://archive.org/download/haizhan-seafox-zhonghua-xuexi-ji-cec-i-apple-ii-china-tape
 mkdir -p tapes
-fetch() { # 本地路径 远程文件名 SHA1
+fetch() { # 本地路径 远程文件名 SHA1 [archive.org 条目，默认《海战》]
   if [ -f "$1" ] && [ "$(shasum -a 1 "$1" | cut -d' ' -f1)" = "$3" ]; then
     echo "已有 $1"; return
   fi
   echo "下载 $1 ..."
-  curl -fL --retry 3 -o "$1" "$ITEM/$2" || { echo "下载失败: $1"; ok=0; return; }
+  curl -fL --retry 3 -o "$1" "${4:-$ITEM}/$2" || { echo "下载失败: $1"; ok=0; return; }
   if [ "$(shasum -a 1 "$1" | cut -d' ' -f1)" != "$3" ]; then echo "校验失败: $1"; ok=0; fi
 }
 fetch "tapes/Face A.wav" "Face%20A.wav" ab151d913bc4b8d34d01509bd8653c1c963528d2
 fetch "tapes/Face B.wav" "Face%20B.wav" 2e7ee3623c6a8aeae21c3429ee88e6b9280c488e
 fetch "manual.jpg" "scans/jpegs/manual.jpg" 14125878c97f05750c80ca2cb013e3533eb8e9de
+# 《警察抓小偷》(Lode Runner)
+LR=https://archive.org/download/jingcha-zhua-xiaotou-lode-runner-zhonghua-xuexi-ji-cec-i-apple-ii-china-tape
+mkdir -p tapes/loderunner
+fetch "tapes/loderunner/Face A.wav" "Face%20A.wav" 2e73dd8bf735d4bec4642ea7e06f43955f90e59d $LR
+fetch "tapes/loderunner/Face B.wav" "Face%20B.wav" 71e771b8197e7085bebb90914acac9bece67e230 $LR
 
 echo "== ROM（需自备，见 README）"
 mkdir -p roms
@@ -51,4 +56,4 @@ if command -v mame >/dev/null 2>&1; then
     echo "romset a2twarp 缺失（可选，用于修改版的 CPU 加速，见 README）"
 fi
 
-if [ $ok = 1 ]; then echo; echo "准备完毕，运行 ./play_seafox.sh 开始游戏"; else echo; echo "还有问题，见上面的提示"; exit 1; fi
+if [ $ok = 1 ]; then echo; echo "准备完毕，运行 ./play_seafox.sh（海战）或 ./play_loderunner.sh（警察抓小偷）开始游戏"; else echo; echo "还有问题，见上面的提示"; exit 1; fi
