@@ -1,4 +1,4 @@
--- 《海战》玩法修改：放宽"同一时间只能有一颗"的开火限制
+-- 《海战》玩法修改：放宽"同一时间只能有一颗"的开火限制；另有油耗、无限命、航速，见下文
 --
 -- 向上发射（$784C）检查 $7EC1 < $7EC2，向前发射（$78ED）检查 $7F8D < $7F8E，
 -- 原版这两个上限都是 1。它们只在开火检查时各读一次，这里用读 tap 改掉读到的值，不改游戏代码。
@@ -49,4 +49,28 @@ if os.getenv("SEAFOX_INFINITE_LIVES") ~= "0" then
   SEAFOX_LIVES_TAP = space:install_write_tap(0x71C3, 0x71C3, "seafox_lives", function(offset, data, mask)
     if data < 3 then return 3 end
   end)
+end
+
+-- 航速：潜艇移动程序 $7D3F ADC $7E15、$7D5B ADC $7E16 把 dx/dy（键盘操作是 ±2）加到坐标上，
+-- 这两条指令读航速时按倍数放大（默认 1.5，即每节拍 3 像素）；$7D45 读 $7E15 只取符号，不用改。
+-- 小数部分按轴累计，倍数不是整数倍时平均下来也准。只在 $71C2 非 0 时生效：开场驶入动画（$6CB5）
+-- 要等 x 恰好等于 100 才结束，步长变了会永远对不上；过关/死亡后的驶出、下沉动画在 $6D3C 清 0 之后。
+local SUB_SPEED = tonumber(os.getenv("SEAFOX_SUB_SPEED")) or 1.5
+local cpu = seafox_cpu()
+
+local function scaler(lo, hi)
+  local frac = 0
+  return function(offset, data, mask)
+    local pc = cpu.state["PC"].value
+    if pc < lo or pc > hi or space:read_u8(0x71C2) == 0 then return data end
+    local v = (data >= 0x80 and data - 256 or data) * SUB_SPEED + frac
+    local n = v >= 0 and math.floor(v) or -math.floor(-v)
+    frac = v - n
+    return n & 0xFF
+  end
+end
+
+if SUB_SPEED ~= 1 then
+  SEAFOX_SPEED_X_TAP = space:install_read_tap(0x7E15, 0x7E15, "seafox_sub_dx", scaler(0x7D3F, 0x7D42))
+  SEAFOX_SPEED_Y_TAP = space:install_read_tap(0x7E16, 0x7E16, "seafox_sub_dy", scaler(0x7D5B, 0x7D5E))
 end

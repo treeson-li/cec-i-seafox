@@ -15,5 +15,5 @@ fi
 if [ ! -f "$TAPE" ]; then
   python3 tools/loderunner_tape.py "$DIR/Face A.wav" "$DIR/Face B.wav" "$TAPE" || exit 1
 fi
-exec mame ceci -rompath roms -cass "$TAPE" -window -nomaximize -skip_gameinfo \
+exec mame ceci -rompath roms -cass "$TAPE" -window -maximize -skip_gameinfo \
   -snapshot_directory snap -autoboot_script tools/play_loderunner.lua
