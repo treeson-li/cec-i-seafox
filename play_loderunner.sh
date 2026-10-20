@@ -4,6 +4,7 @@
 # 标题画面按任意键开始，演示画面和每关开始时再按一下键。
 # 方向键移动（按住走、松开停），Z/X（或 U/O）向左/向右挖洞，Esc 暂停，Ctrl-A 放弃这条命，
 #   Ctrl-R 结束这一局，Ctrl-S 声音开关，Ctrl-H/Ctrl-U 变慢/变快。
+# PgUp/PgDn（Mac 上 Fn+↑/↓）选关：下一关/上一关，按住 Shift ±10。
 # 退出：先按 Fn+Delete（MAME 的 UI 切换键）再按 Esc。
 cd "$(dirname "$0")"
 DIR=tapes/loderunner

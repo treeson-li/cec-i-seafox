@@ -165,6 +165,9 @@ Throttling is again off while loading. The Chinese title screen appears within a
 | Ctrl-R | End the game |
 | Ctrl-S | Sound on/off |
 | Ctrl-H / Ctrl-U | Slower / faster game |
+| PgUp / PgDn (Fn+↑ / Fn+↓ on a Mac) | Level select: next / previous level, hold Shift for ±10 (150 levels) |
+
+The target level shows in the top-left corner and the jump happens half a second after the last press (mid-level the runner "dies" once without losing a life; at the level-start prompt the level is swapped directly). It uses the game's own Ctrl-^ skip-level cheat, so like the original, that game's score is not entered in the high-score table.
 
 The original direction keys are I/J/K/L: one press keeps moving and Space stops; they still work. The host arrow keys normally arrive on the emulated keyboard as Ctrl-H/U/K/J, which change game speed and switch to joystick mode, so `tools/loderunner_controls.lua` turns them into held I/J/K/L.
 
