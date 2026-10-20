@@ -45,7 +45,7 @@ To quit: the emulated machine has a full keyboard, so MAME's hotkeys are disable
 | Item | Source | Who provides it |
 |---|---|---|
 | MAME (tested with 0.289) | macOS: `brew install mame`; other systems: [mamedev.org](https://www.mamedev.org/release.html) | You; `setup.sh` checks for it |
-| Tape recordings `tapes/Face A.wav`, `Face B.wav` and manual `manual.jpg` | [Original transfer on archive.org](https://archive.org/details/haizhan-seafox-zhonghua-xuexi-ji-cec-i-apple-ii-china-tape) | Downloaded by `setup.sh`, SHA1-checked |
+| Tape recordings `tapes/seafox/Face A.wav`, `Face B.wav` and manual `manual.jpg` | [Original transfer on archive.org](https://archive.org/details/haizhan-seafox-zhonghua-xuexi-ji-cec-i-apple-ii-china-tape) | Downloaded by `setup.sh`, SHA1-checked |
 | *Lode Runner* tape recordings `tapes/loderunner/Face A.wav`, `Face B.wav` | [Original transfer on archive.org](https://archive.org/details/jingcha-zhua-xiaotou-lode-runner-zhonghua-xuexi-ji-cec-i-apple-ii-china-tape) | Downloaded by `setup.sh`, SHA1-checked |
 | ROMs | See next section | **You** |
 
@@ -87,9 +87,13 @@ a2twarp.zip (optional)
 
 The ROMs used for testing came from the [MAME merged set on planetemu.net](https://www.planetemu.net/en/rom/mame-roms-merged/ceci) ([a2twarp](https://www.planetemu.net/en/rom/mame-roms-merged/a2twarp) is there too); all passed MAME 0.289 verification. That site is not affiliated with this project, and you are responsible for the copyright status of any ROMs you use.
 
-The maintainer keeps a private backup repository, `cec-i-seafox-roms`. For invited collaborators, `./setup.sh` fetches the ROMs from it automatically; for everyone else this step is skipped.
+The maintainer keeps a private backup repository, `cec-i-seafox-roms`, holding the ROMs, side A of the Sea Fox tape and the re-encoded Lode Runner `clean.wav`. For invited collaborators, `./setup.sh` fetches from it when ROMs are missing or a tape can't be downloaded from archive.org; for everyone else this step is skipped.
 
 The most legitimate source is dumping a real machine: `u7` and `u35` are 27256 EPROMs readable with an ordinary programmer; `u33` and `u34` are 128 KB mask ROMs that need an adapter.
+
+### If a download is broken
+
+If the archive.org tape recordings or manual, or the ROM sources above, stop working, please [open an issue](https://github.com/treeson-li/cec-i-seafox/issues/new?title=Download%20broken%3A%20) saying which file is missing and what `./setup.sh` printed. The maintainer keeps backups and will reply.
 
 ## Controls
 
@@ -164,7 +168,12 @@ Throttling is again off while loading. The Chinese title screen appears within a
 
 The original direction keys are I/J/K/L: one press keeps moving and Space stops; they still work. The host arrow keys normally arrive on the emulated keyboard as Ctrl-H/U/K/J, which change game speed and switch to joystick mode, so `tools/loderunner_controls.lua` turns them into held I/J/K/L.
 
-The original recordings have an asymmetric waveform, and the CEC-I ROM tape routine can't lock onto the sync bit in MAME, so they don't load as is. On first run `tools/loderunner_tape.py` decodes both sides (the three records are SHA1-checked; side A's third record has a bad block, so side B's is used) and writes a clean standard tape, `tapes/loderunner/clean.wav`. Format and loading details are in section 6 of [docs/TECHNICAL.md](docs/TECHNICAL.md) (Chinese).
+**The original recordings can't be used directly**, for two reasons:
+
+- The waveform is asymmetric, and the CEC-I ROM tape routine can't lock onto the sync bit in MAME, so they don't load as is.
+- Both sides are damaged and neither is complete on its own. The tape holds three records: on side A the third record (the game itself) has 12 bad blocks; on side B the second record (the title screen) has a one-bit error that happens to pass the block checksum, so the loader can't detect it.
+
+On first run `tools/loderunner_tape.py` decodes both sides, picks the intact copy of each record by its known SHA1 (record 1 is identical on both sides, record 2 comes from side A, record 3 from side B) and writes a clean standard tape, `tapes/loderunner/clean.wav`, which is what actually gets played. Format and loading details are in section 6 of [docs/TECHNICAL.md](docs/TECHNICAL.md) (Chinese).
 
 ## Files
 
@@ -179,7 +188,7 @@ tools/seafox_speed.lua     Modded: metronome for a fixed tick rate
 tools/seafox_accel.lua     Modded: TransWarp card on/off (slows down for tape and sound)
 tools/research/            Tape decoding and code analysis scripts (not needed to play)
 docs/TECHNICAL.md          Tape format, loading process, game internals (Chinese)
-tapes/submissionInfos.txt  Notes from the archive.org tape transfer
+tapes/seafox/              Sea Fox tapes (recordings downloaded by setup.sh) and archive.org transfer notes
 play_loderunner.sh         Lode Runner launcher
 tools/play_loderunner.lua  Lode Runner autoload
 tools/loderunner_controls.lua Lode Runner arrow-key control layer

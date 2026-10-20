@@ -44,7 +44,7 @@ cd cec-i-seafox
 | 东西 | 来源 | 由谁准备 |
 |---|---|---|
 | MAME（测试版本 0.289） | macOS: `brew install mame`；其他系统见 [mamedev.org](https://www.mamedev.org/release.html) | 自己安装，`setup.sh` 会检查 |
-| 磁带录音 `tapes/Face A.wav`、`Face B.wav`，说明书 `manual.jpg` | [archive.org 上的原始转录](https://archive.org/details/haizhan-seafox-zhonghua-xuexi-ji-cec-i-apple-ii-china-tape) | `setup.sh` 自动下载并校验 SHA1 |
+| 磁带录音 `tapes/seafox/Face A.wav`、`Face B.wav`，说明书 `manual.jpg` | [archive.org 上的原始转录](https://archive.org/details/haizhan-seafox-zhonghua-xuexi-ji-cec-i-apple-ii-china-tape) | `setup.sh` 自动下载并校验 SHA1 |
 | 《警察抓小偷》磁带录音 `tapes/loderunner/Face A.wav`、`Face B.wav` | [archive.org 上的原始转录](https://archive.org/details/jingcha-zhua-xiaotou-lode-runner-zhonghua-xuexi-ji-cec-i-apple-ii-china-tape) | `setup.sh` 自动下载并校验 SHA1 |
 | ROM | 见下一节 | **自备** |
 
@@ -86,9 +86,13 @@ a2twarp.zip（可选）
 
 本项目测试时用的 ROM 下载自 [planetemu.net 的 MAME merged 集合](https://www.planetemu.net/en/rom/mame-roms-merged/ceci)（[a2twarp](https://www.planetemu.net/en/rom/mame-roms-merged/a2twarp) 也在那里），压缩包都通过了 MAME 0.289 的校验。该站点与本项目无关，ROM 的版权和使用责任由使用者自行承担。
 
-维护者另有一个私有备份仓库 `cec-i-seafox-roms`；被邀请为协作者的人运行 `./setup.sh` 时会自动从那里拉取 ROM，没有权限则跳过。
+维护者另有一个私有备份仓库 `cec-i-seafox-roms`，存有 ROM、《海战》A 面录音和《警察抓小偷》合成好的 `clean.wav`；被邀请为协作者的人运行 `./setup.sh` 时，缺 ROM 或从 archive.org 下载不到磁带会自动从那里拉取，没有权限则跳过。
 
 最正当的来源是从实机转储：`u7`、`u35` 是 27256 EPROM，普通编程器就能读；`u33`、`u34` 是 128KB 掩膜 ROM，需要转接座。
+
+### 下载不到怎么办
+
+archive.org 上的磁带录音、说明书，或者上面提到的 ROM 下载地址失效时，请到 [Issues 留言](https://github.com/treeson-li/cec-i-seafox/issues/new?title=%E4%B8%8B%E8%BD%BD%E5%A4%B1%E6%95%88%EF%BC%9A)，写明缺哪个文件、`./setup.sh` 的提示是什么。维护者有备份，看到后会回复。
 
 ## 操作
 
@@ -163,7 +167,12 @@ a2twarp.zip（可选）
 
 原版的方向键是 I/J/K/L，按一下就一直往那个方向走，按空格才停，现在也还能用。电脑方向键在模拟键盘上本来是 Ctrl-H/U/K/J，会改游戏速度、切到摇杆模式，所以 `tools/loderunner_controls.lua` 把它们换成了"按住走、松开停"的 I/J/K/L。
 
-原始录音的波形上下不对称，CEC-I ROM 的读带例程在 MAME 里对不准同步位，直接放原录音装不进去。所以第一次运行时会先用 `tools/loderunner_tape.py` 把两面录音解码（三条记录按 SHA1 校验，A 面第三条有坏块，取 B 面的），再合成一盘干净的标准磁带 `tapes/loderunner/clean.wav`。格式和装载过程见 [docs/TECHNICAL.md](docs/TECHNICAL.md) 第 6 节。
+**原始录音不能直接用**，有两个问题：
+
+- 波形上下不对称，CEC-I ROM 的读带例程在 MAME 里对不准同步位，直接放原录音装不进去。
+- 两面都有损坏，单独哪一面都不完整。磁带上有三条记录：A 面第三条（游戏本体）有 12 个坏块；B 面第二条（标题画面）错了一位，而且这个错误恰好通过了块校验，读带时发现不了。
+
+所以第一次运行时，`tools/loderunner_tape.py` 会把两面录音都解码，每条记录按已知的 SHA1 挑出完好的一份（第一条两面相同，第二条取 A 面，第三条取 B 面），再合成一盘干净的标准磁带 `tapes/loderunner/clean.wav`，实际玩的是这盘合成磁带。格式和装载过程见 [docs/TECHNICAL.md](docs/TECHNICAL.md) 第 6 节。
 
 ## 文件
 
@@ -178,7 +187,7 @@ tools/seafox_speed.lua     修改版：节拍器，固定节拍速度
 tools/seafox_accel.lua     修改版：TransWarp 加速卡的开关（装带、发声时降速）
 tools/research/            磁带解码和程序分析用的脚本（玩游戏不需要）
 docs/TECHNICAL.md          磁带格式、装载过程、游戏内部变量
-tapes/submissionInfos.txt  archive.org 上磁带转录的说明
+tapes/seafox/              《海战》磁带（录音由 setup.sh 下载）和 archive.org 上转录的说明
 play_loderunner.sh         《警察抓小偷》启动脚本
 tools/play_loderunner.lua  《警察抓小偷》自动装载
 tools/loderunner_controls.lua 《警察抓小偷》方向键控制层

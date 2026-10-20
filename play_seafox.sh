@@ -27,7 +27,7 @@ for arg in "$@"; do
 done
 export SEAFOX_ORIGINAL SEAFOX_START_MISSION
 # 两面磁带内容相同，固定用 A 面（B 面是备份，要用的话改这里并把 ENTER_AT 设为 4.0）
-TAPE="tapes/Face A.wav"; export ENTER_AT=6.5
+TAPE="tapes/seafox/Face A.wav"; export ENTER_AT=6.5
 
 if [ ! -f "$TAPE" ] || [ ! -f roms/ceci.zip ]; then
   echo "缺少磁带或 ROM，请先运行 ./setup.sh"; exit 1

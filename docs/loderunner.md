@@ -25,6 +25,8 @@ cd cec-i-seafox
 - **MAME**（测试版本 0.289）：macOS 用 `brew install mame`，其他系统见 [mamedev.org](https://www.mamedev.org/release.html)。
 - **中华学习机的 ROM**：有版权，仓库里不提供，要自己准备 `ceci.zip` 等压缩包放进 `roms/`。文件清单和 SHA1 校验值见仓库 [README 的"ROM"一节](https://github.com/treeson-li/cec-i-seafox#rom)。
 
+磁带录音或 ROM 下载不到时，请到 [GitHub Issues 留言](https://github.com/treeson-li/cec-i-seafox/issues/new?title=%E4%B8%8B%E8%BD%BD%E5%A4%B1%E6%95%88%EF%BC%9A)，写明缺哪个文件。
+
 ## 怎么玩
 
 装载时自动关闭限速，十几秒后出现中文标题画面。出现 "HIT ANY KEY TO BEGIN" 时按任意键开始；之后是演示画面，再按一下键进入第一关。每关开始（和每次死后）也要按一下键才会动。
@@ -45,4 +47,9 @@ cd cec-i-seafox
 
 ## 为什么不直接放原始录音
 
-原始录音的波形上下不对称，中华学习机 ROM 里的读带程序在 MAME 里对不准同步位，直接放原录音装不进去。所以第一次运行时，`tools/loderunner_tape.py` 会先把 A、B 两面录音解码，三段记录逐一按 SHA1 校验（A 面第三段有坏块，改用 B 面的），再合成一盘干净的标准磁带 `tapes/loderunner/clean.wav`。磁带格式和装载过程的详细分析见 [TECHNICAL.md 第 6 节](https://github.com/treeson-li/cec-i-seafox/blob/main/docs/TECHNICAL.md#6-警察抓小偷lode-runner)。
+**原始录音不能直接用**，有两个问题：
+
+- 波形上下不对称，中华学习机 ROM 里的读带程序在 MAME 里对不准同步位，直接放原录音装不进去。
+- 两面都有损坏，单独哪一面都不完整。磁带上有三条记录：A 面第三条（游戏本体）有 12 个坏块；B 面第二条（标题画面）错了一位，而且这个错误恰好通过了块校验，读带时发现不了。
+
+所以第一次运行时，`tools/loderunner_tape.py` 会把两面录音都解码，每条记录按已知的 SHA1 挑出完好的一份（第一条两面相同，第二条取 A 面，第三条取 B 面），再合成一盘干净的标准磁带 `tapes/loderunner/clean.wav`，实际玩的是这盘合成磁带。磁带格式和装载过程的详细分析见 [TECHNICAL.md 第 6 节](https://github.com/treeson-li/cec-i-seafox/blob/main/docs/TECHNICAL.md#6-警察抓小偷lode-runner)。

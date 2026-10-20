@@ -8,7 +8,7 @@
 cd "$(dirname "$0")"
 DIR=tapes/loderunner
 TAPE="$DIR/clean.wav"
-if [ ! -f roms/ceci.zip ] || [ ! -f "$DIR/Face A.wav" ] || [ ! -f "$DIR/Face B.wav" ]; then
+if [ ! -f roms/ceci.zip ] || { [ ! -f "$TAPE" ] && { [ ! -f "$DIR/Face A.wav" ] || [ ! -f "$DIR/Face B.wav" ]; }; }; then
   echo "缺少磁带或 ROM，请先运行 ./setup.sh"; exit 1
 fi
 # 原录音在 MAME 里读不准，先解码再合成一盘干净的磁带（只做一次）
