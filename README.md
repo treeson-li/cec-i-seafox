@@ -143,7 +143,7 @@ a2twarp.zip（可选）
 
 ## 另一个游戏：警察抓小偷（Lode Runner）
 
-成都三开元电脑经营部 1988 年发行的磁带版 *Lode Runner*（标题画面写着"警察抓小偷 (LODE RUNNER 九)"），没有修改。
+成都三开元电脑经营部 1988 年发行的磁带版 *Lode Runner*（标题画面写着"警察抓小偷 (LODE RUNNER 九)"），没有修改。单独的介绍页：[中华学习机 CEC-I《警察抓小偷》](https://treeson-li.github.io/cec-i-seafox/loderunner.html)。
 
 ```sh
 ./play_loderunner.sh
