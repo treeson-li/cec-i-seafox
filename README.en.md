@@ -151,7 +151,8 @@ Set these as environment variables before the command, e.g. `SEAFOX_MAX_UP=2 ./p
 The 1988 cassette release of *Lode Runner* by 成都三开元电脑经营部 (the title screen reads "警察抓小偷 (LODE RUNNER 九)"), unmodified.
 
 ```sh
-./play_loderunner.sh
+./play_loderunner.sh       # start at level 1
+./play_loderunner.sh 15    # start at level 15 (1-150)
 ```
 
 Throttling is again off while loading. The Chinese title screen appears within a few seconds; press any key at "HIT ANY KEY TO BEGIN". A demo follows; press a key again to enter level 1. Each level (and each life) also waits for a key press.
@@ -167,7 +168,12 @@ Throttling is again off while loading. The Chinese title screen appears within a
 | Ctrl-H / Ctrl-U | Slower / faster game |
 | PgUp / PgDn (Fn+↑ / Fn+↓ on a Mac) | Level select: next / previous level, hold Shift for ±10 (150 levels) |
 
-The target level shows in the top-left corner and the jump happens half a second after the last press (mid-level the runner "dies" once without losing a life; at the level-start prompt the level is swapped directly). It uses the game's own Ctrl-^ skip-level cheat, so like the original, that game's score is not entered in the high-score table.
+**Level select** works two ways:
+
+- A number on the command line, e.g. `./play_loderunner.sh 15`: every game starts at level 15; dying restarts that level, clearing it goes on to the next, and a new game after game over starts at 15 again.
+- PgUp / PgDn while running: available any time after a game has started. The target level shows in the top-left corner; a moment after the last press the level is replaced by that level's start screen (no iris animation, the runner blinks waiting for a key), with lives and score unchanged. Keep pressing to browse, then press a key to play. Deaths and level clears continue from the chosen level.
+
+Starting anywhere but level 1, or selecting a level mid-game, keeps that game out of the high-score table (the original's skip-level cheat and editor test play follow the same rule).
 
 The original direction keys are I/J/K/L: one press keeps moving and Space stops; they still work. The host arrow keys normally arrive on the emulated keyboard as Ctrl-H/U/K/J, which change game speed and switch to joystick mode, so `tools/loderunner_controls.lua` turns them into held I/J/K/L.
 
@@ -192,7 +198,7 @@ tools/seafox_accel.lua     Modded: TransWarp card on/off (slows down for tape an
 tools/research/            Tape decoding and code analysis scripts (not needed to play)
 docs/TECHNICAL.md          Tape format, loading process, game internals (Chinese)
 tapes/seafox/              Sea Fox tapes (recordings downloaded by setup.sh) and archive.org transfer notes
-play_loderunner.sh         Lode Runner launcher
+play_loderunner.sh         Lode Runner launcher (number 1-150 picks the starting level)
 tools/play_loderunner.lua  Lode Runner autoload
 tools/loderunner_controls.lua Lode Runner arrow-key control layer
 tools/loderunner_tape.py   Lode Runner tape decoder and re-encoder

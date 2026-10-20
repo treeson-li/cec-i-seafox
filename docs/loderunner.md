@@ -17,7 +17,7 @@ description: 在 MAME 模拟器上运行中华学习机 CEC-I 的磁带游戏《
 git clone https://github.com/treeson-li/cec-i-seafox.git
 cd cec-i-seafox
 ./setup.sh            # 检查 MAME、从 archive.org 下载磁带录音、检查 ROM
-./play_loderunner.sh  # 开始游戏
+./play_loderunner.sh  # 开始游戏；加数字从那一关开始，如 ./play_loderunner.sh 15
 ```
 
 需要准备：
@@ -42,7 +42,7 @@ cd cec-i-seafox
 | Ctrl-H / Ctrl-U | 游戏变慢 / 变快 |
 | PgUp / PgDn（Mac 上 Fn+↑ / Fn+↓） | 选关：下一关 / 上一关，按住 Shift 一次跳 10 关，共 150 关 |
 
-选关时左上角显示目标关号，停手半秒后跳过去，不扣命。用的是游戏自带的跳关作弊，用过之后这一局的分数不进高分榜。
+选关：启动时加数字（如 `./play_loderunner.sh 15`）每局都从那一关开始，死了重来还是这关，过关照常进下一关；运行中按 PgUp / PgDn，左上角显示目标关号，停手不到半秒就换成那一关的开场画面，命数和分数不变，可以接着按往下翻，看中了再按键开始玩。选过关的这一局分数不进高分榜。
 
 原版的方向键是 I/J/K/L：按一下就一直往那个方向走，按空格才停，现在也还能用。电脑的方向键在模拟的中华学习机键盘上本来是 Ctrl-H/U/K/J，会改游戏速度、切到摇杆模式，所以脚本把它们换成了"按住走、松开停"。
 

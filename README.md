@@ -150,7 +150,8 @@ archive.org 上的磁带录音、说明书，或者上面提到的 ROM 下载地
 成都三开元电脑经营部 1988 年发行的磁带版 *Lode Runner*（标题画面写着"警察抓小偷 (LODE RUNNER 九)"），没有修改。单独的介绍页：[中华学习机 CEC-I《警察抓小偷》](https://treeson-li.github.io/cec-i-seafox/loderunner.html)。
 
 ```sh
-./play_loderunner.sh
+./play_loderunner.sh       # 从第 1 关开始
+./play_loderunner.sh 15    # 从第 15 关开始（1-150）
 ```
 
 装载阶段同样关闭限速，十几秒后出现中文标题画面，"HIT ANY KEY TO BEGIN" 时按任意键开始；之后是演示画面，再按一下键进入第一关，每关开始（和每次死后）也要按一下键才动。
@@ -166,7 +167,12 @@ archive.org 上的磁带录音、说明书，或者上面提到的 ROM 下载地
 | Ctrl-H / Ctrl-U | 游戏变慢 / 变快 |
 | PgUp / PgDn（Mac 上 Fn+↑ / Fn+↓） | 选关：下一关 / 上一关，按住 Shift 一次跳 10 关，共 150 关 |
 
-选关时左上角显示目标关号，停手半秒后跳过去（正在玩时人会"死"一下再进新关，但不扣命；开场等按键时直接换关）。用的是游戏自带的 Ctrl-^ 跳关作弊，用过之后这一局的分数和原版一样不进高分榜。
+**选关**有两种方式：
+
+- 启动时加数字，比如 `./play_loderunner.sh 15`：每局都从第 15 关开始，死了重来还是这关，过关照常进下一关，整局结束重新开局也还是从第 15 关开始。
+- 运行中按 PgUp / PgDn：开局后随时都能按，左上角显示目标关号，停手不到半秒就换成那一关的开场画面（不播揭幕动画，人在闪着等你按键），命数和分数不变。在开场画面接着按可以一关关往下翻，看中了再按键开始玩。之后死了重来、过关进下一关都从选的这关算。
+
+从第 1 关以外开始，或者中途选过关，这一局的分数不进高分榜（原版的跳关作弊和编辑器试玩也是这个规矩）。
 
 原版的方向键是 I/J/K/L，按一下就一直往那个方向走，按空格才停，现在也还能用。电脑方向键在模拟键盘上本来是 Ctrl-H/U/K/J，会改游戏速度、切到摇杆模式，所以 `tools/loderunner_controls.lua` 把它们换成了"按住走、松开停"的 I/J/K/L。
 
@@ -191,7 +197,7 @@ tools/seafox_accel.lua     修改版：TransWarp 加速卡的开关（装带、�
 tools/research/            磁带解码和程序分析用的脚本（玩游戏不需要）
 docs/TECHNICAL.md          磁带格式、装载过程、游戏内部变量
 tapes/seafox/              《海战》磁带（录音由 setup.sh 下载）和 archive.org 上转录的说明
-play_loderunner.sh         《警察抓小偷》启动脚本
+play_loderunner.sh         《警察抓小偷》启动脚本（数字 1-150 指定起始关卡）
 tools/play_loderunner.lua  《警察抓小偷》自动装载
 tools/loderunner_controls.lua 《警察抓小偷》方向键控制层
 tools/loderunner_tape.py   《警察抓小偷》磁带解码与合成
