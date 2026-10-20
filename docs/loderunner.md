@@ -23,7 +23,7 @@ cd cec-i-seafox
 需要准备：
 
 - **MAME**（测试版本 0.289）：macOS 用 `brew install mame`，其他系统见 [mamedev.org](https://www.mamedev.org/release.html)。
-- **中华学习机的 ROM**：有版权，仓库里不提供，要自己准备 `ceci.zip` 等压缩包放进 `roms/`。文件清单和 SHA1 校验值见仓库 [README 的"ROM"一节](https://github.com/treeson-li/cec-i-seafox#rom)。
+- **中华学习机的 ROM**：有版权，仓库里不附带，请到 [planetemu.net 的 MAME merged 集合](https://www.planetemu.net/en/rom/mame-roms-merged/ceci) 下载 `ceci.zip` 等压缩包，放进 `roms/`。文件清单和 SHA1 校验值见仓库 [README 的"ROM"一节](https://github.com/treeson-li/cec-i-seafox#rom)。
 
 磁带录音或 ROM 下载不到时，请到 [GitHub Issues 留言](https://github.com/treeson-li/cec-i-seafox/issues/new?title=%E4%B8%8B%E8%BD%BD%E5%A4%B1%E6%95%88%EF%BC%9A)，写明缺哪个文件。
 

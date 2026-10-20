@@ -58,7 +58,7 @@ else
     from_backup tapes/loderunner/clean.wav $LR_CLEAN || ok=0
 fi
 
-echo "== ROM（需自备，见 README）"
+echo "== ROM（请按 README 给出的网址下载）"
 mkdir -p roms
 missing=0
 for z in ceci a2diskiing d2fdc votrsc01a a2twarp; do [ -f roms/$z.zip ] || missing=1; done
@@ -67,7 +67,7 @@ if [ $missing = 1 ]; then
     for z in "$backup_dir"/*.zip; do [ -f "roms/$(basename "$z")" ] || cp "$z" roms/; done
     echo "已从私有备份仓库取得 ROM"
   else
-    echo "无法访问私有备份仓库，请按 README 自行下载 ROM 放进 roms/"
+    echo "无法访问私有备份仓库，请从 README 给出的网址下载 ROM 放进 roms/"
   fi
 fi
 [ -n "$backup_dir" ] && rm -rf "$(dirname "$backup_dir")"

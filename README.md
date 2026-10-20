@@ -18,7 +18,7 @@
 ```sh
 git clone https://github.com/treeson-li/cec-i-seafox.git
 cd cec-i-seafox
-# 1. 按下面"ROM"一节准备好 4 个 ROM 压缩包，放进 roms/
+# 1. 按下面"ROM"一节给出的网址下载 ROM 压缩包，放进 roms/
 #    （有私有备份仓库访问权限的人可跳过这步，setup.sh 会自动拉取）
 # 2. 安装 MAME、下载磁带和说明书、检查 ROM：
 ./setup.sh
@@ -46,11 +46,11 @@ cd cec-i-seafox
 | MAME（测试版本 0.289） | macOS: `brew install mame`；其他系统见 [mamedev.org](https://www.mamedev.org/release.html) | 自己安装，`setup.sh` 会检查 |
 | 磁带录音 `tapes/seafox/Face A.wav`、`Face B.wav`，说明书 `manual.jpg` | [archive.org 上的原始转录](https://archive.org/details/haizhan-seafox-zhonghua-xuexi-ji-cec-i-apple-ii-china-tape) | `setup.sh` 自动下载并校验 SHA1 |
 | 《警察抓小偷》磁带录音 `tapes/loderunner/Face A.wav`、`Face B.wav` | [archive.org 上的原始转录](https://archive.org/details/jingcha-zhua-xiaotou-lode-runner-zhonghua-xuexi-ji-cec-i-apple-ii-china-tape) | `setup.sh` 自动下载并校验 SHA1 |
-| ROM | 见下一节 | **自备** |
+| ROM | [planetemu.net](https://www.planetemu.net/en/rom/mame-roms-merged/ceci)，见下一节 | **用户自行下载** |
 
 ### ROM
 
-ROM 有版权，本仓库不提供。需要 MAME 0.289 格式的 4 个 ROM 压缩包，放进 `roms/` 目录（不用解压）：
+ROM 有版权，本仓库不附带。请到 [planetemu.net 的 MAME merged 集合](https://www.planetemu.net/en/rom/mame-roms-merged/ceci) 下载下面这些 MAME 0.289 格式的压缩包（[a2twarp](https://www.planetemu.net/en/rom/mame-roms-merged/a2twarp) 也在那里），放进 `roms/` 目录（不用解压）：
 
 | 压缩包 | 内容 |
 |---|---|
@@ -84,11 +84,11 @@ a2twarp.zip（可选）
   ae transwarp rom v1.4.bin     SHA1 7b75534e7895e04859a0b1337801c6eeb0cef52a
 ```
 
-本项目测试时用的 ROM 下载自 [planetemu.net 的 MAME merged 集合](https://www.planetemu.net/en/rom/mame-roms-merged/ceci)（[a2twarp](https://www.planetemu.net/en/rom/mame-roms-merged/a2twarp) 也在那里），压缩包都通过了 MAME 0.289 的校验。该站点与本项目无关，ROM 的版权和使用责任由使用者自行承担。
+本项目测试用的就是从上述网址下载的压缩包，都通过了 MAME 0.289 的校验。该站点与本项目无关，ROM 的版权和使用责任由使用者自行承担。
 
 维护者另有一个私有备份仓库 `cec-i-seafox-roms`，存有 ROM、《海战》A 面录音和《警察抓小偷》合成好的 `clean.wav`；被邀请为协作者的人运行 `./setup.sh` 时，缺 ROM 或从 archive.org 下载不到磁带会自动从那里拉取，没有权限则跳过。
 
-最正当的来源是从实机转储：`u7`、`u35` 是 27256 EPROM，普通编程器就能读；`u33`、`u34` 是 128KB 掩膜 ROM，需要转接座。
+如果有实机，也可以自己转储：`u7`、`u35` 是 27256 EPROM，普通编程器就能读；`u33`、`u34` 是 128KB 掩膜 ROM，需要转接座。
 
 ### 下载不到怎么办
 

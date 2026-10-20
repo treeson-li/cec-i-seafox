@@ -20,7 +20,7 @@ A second game is included: the cassette release of *Lode Runner* (警察抓小�
 ```sh
 git clone https://github.com/treeson-li/cec-i-seafox.git
 cd cec-i-seafox
-# 1. Put the ROM zips into roms/ (see "ROMs" below)
+# 1. Download the ROM zips from the site given under "ROMs" below into roms/
 # 2. Check MAME, download the tapes and manual, verify the ROMs:
 ./setup.sh
 # 3. Play
@@ -47,11 +47,11 @@ To quit: the emulated machine has a full keyboard, so MAME's hotkeys are disable
 | MAME (tested with 0.289) | macOS: `brew install mame`; other systems: [mamedev.org](https://www.mamedev.org/release.html) | You; `setup.sh` checks for it |
 | Tape recordings `tapes/seafox/Face A.wav`, `Face B.wav` and manual `manual.jpg` | [Original transfer on archive.org](https://archive.org/details/haizhan-seafox-zhonghua-xuexi-ji-cec-i-apple-ii-china-tape) | Downloaded by `setup.sh`, SHA1-checked |
 | *Lode Runner* tape recordings `tapes/loderunner/Face A.wav`, `Face B.wav` | [Original transfer on archive.org](https://archive.org/details/jingcha-zhua-xiaotou-lode-runner-zhonghua-xuexi-ji-cec-i-apple-ii-china-tape) | Downloaded by `setup.sh`, SHA1-checked |
-| ROMs | See next section | **You** |
+| ROMs | [planetemu.net](https://www.planetemu.net/en/rom/mame-roms-merged/ceci), see next section | **Downloaded by you** |
 
 ### ROMs
 
-The ROMs are copyrighted and not included. You need these MAME 0.289 ROM sets in `roms/` (keep them zipped):
+The ROMs are copyrighted and not included. Download these MAME 0.289 ROM sets from the [MAME merged set on planetemu.net](https://www.planetemu.net/en/rom/mame-roms-merged/ceci) ([a2twarp](https://www.planetemu.net/en/rom/mame-roms-merged/a2twarp) is there too) and put them in `roms/` (keep them zipped):
 
 | Zip | Contents |
 |---|---|
@@ -85,11 +85,11 @@ a2twarp.zip (optional)
   ae transwarp rom v1.4.bin     SHA1 7b75534e7895e04859a0b1337801c6eeb0cef52a
 ```
 
-The ROMs used for testing came from the [MAME merged set on planetemu.net](https://www.planetemu.net/en/rom/mame-roms-merged/ceci) ([a2twarp](https://www.planetemu.net/en/rom/mame-roms-merged/a2twarp) is there too); all passed MAME 0.289 verification. That site is not affiliated with this project, and you are responsible for the copyright status of any ROMs you use.
+The zips used for testing were downloaded from that site; all passed MAME 0.289 verification. That site is not affiliated with this project, and you are responsible for the copyright status of any ROMs you use.
 
 The maintainer keeps a private backup repository, `cec-i-seafox-roms`, holding the ROMs, side A of the Sea Fox tape and the re-encoded Lode Runner `clean.wav`. For invited collaborators, `./setup.sh` fetches from it when ROMs are missing or a tape can't be downloaded from archive.org; for everyone else this step is skipped.
 
-The most legitimate source is dumping a real machine: `u7` and `u35` are 27256 EPROMs readable with an ordinary programmer; `u33` and `u34` are 128 KB mask ROMs that need an adapter.
+If you have a real machine, you can also dump them yourself: `u7` and `u35` are 27256 EPROMs readable with an ordinary programmer; `u33` and `u34` are 128 KB mask ROMs that need an adapter.
 
 ### If a download is broken
 
