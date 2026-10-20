@@ -10,7 +10,7 @@
 #   第 4 关起 G 发追踪鱼雷（追右侧的敌潜艇，同屏 1 枚，每发 2 发弹药）；
 #   原来的 U/I/K/,/M/N/H/Y/J 键照样能用。控制层见 tools/seafox_controls.lua，向左发射和追踪鱼雷见 tools/seafox_torpedoes.lua
 #   向前发射不限颗数；向上发射同屏 3 颗、每秒最多 1 发（SEAFOX_UP_INTERVAL 可改；没有加速卡时 1 颗，每多 1 颗游戏速度减半），SEAFOX_MAX_UP 可改
-#   潜艇航速提高 50%（SEAFOX_SUB_SPEED=1 恢复原版）；停船时油耗减半（SEAFOX_IDLE_FUEL=10 恢复原版）；无限命（SEAFOX_INFINITE_LIVES=0 恢复原版）。
+#   潜艇航速翻倍，和敌潜艇一样快（SEAFOX_SUB_SPEED=1 恢复原版）；停船时油耗减半（SEAFOX_IDLE_FUEL=10 恢复原版）；无限命（SEAFOX_INFINITE_LIVES=0 恢复原版）。
 #   玩法修改见 tools/seafox_patches.lua
 #   速度：固定每秒 17.5 拍（SEAFOX_TICK_RATE 可调，0 = 原版不限速）；有 roms/a2twarp.zip 时插 TransWarp 加速卡，
 #   后期东西多也不变慢（SEAFOX_ACCEL=0 不插）。见 tools/seafox_speed.lua、tools/seafox_accel.lua

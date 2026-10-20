@@ -52,10 +52,12 @@ if os.getenv("SEAFOX_INFINITE_LIVES") ~= "0" then
 end
 
 -- 航速：潜艇移动程序 $7D3F ADC $7E15、$7D5B ADC $7E16 把 dx/dy（键盘操作是 ±2）加到坐标上，
--- 这两条指令读航速时按倍数放大（默认 1.5，即每节拍 3 像素）；$7D45 读 $7E15 只取符号，不用改。
+-- 这两条指令读航速时按倍数放大；$7D45 读 $7E15 只取符号，不用改。我方潜艇的移动间隔 $17A8 是 2，
+-- 每 2 个节拍才动一次，平均每节拍 1 像素；敌潜艇（3 型）间隔 1，每节拍 2 像素。默认 2 倍（每 2 节拍 4 像素），
+-- 和敌潜艇一样快。不改移动间隔是因为扣油（$7D25）等也在这个程序里按调用次数计。
 -- 小数部分按轴累计，倍数不是整数倍时平均下来也准。只在 $71C2 非 0 时生效：开场驶入动画（$6CB5）
 -- 要等 x 恰好等于 100 才结束，步长变了会永远对不上；过关/死亡后的驶出、下沉动画在 $6D3C 清 0 之后。
-local SUB_SPEED = tonumber(os.getenv("SEAFOX_SUB_SPEED")) or 1.5
+local SUB_SPEED = tonumber(os.getenv("SEAFOX_SUB_SPEED")) or 2
 local cpu = seafox_cpu()
 
 local function scaler(lo, hi)
